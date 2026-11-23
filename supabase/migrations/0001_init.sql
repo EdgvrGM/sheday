@@ -60,6 +60,7 @@ as $$
 $$;
 
 -- Evita que una clienta se cambie a sí misma el rol
+-- (Nota: corregida en 0002_fix_role_trigger.sql)
 create function public.protect_profile_role()
 returns trigger
 language plpgsql

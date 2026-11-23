@@ -27,7 +27,7 @@ App de pedidos para la reventa local de ropa (principalmente de mujer). Las clie
 ### 1. Crear el proyecto en Supabase
 
 1. Crea un proyecto gratuito en <https://supabase.com>.
-2. Abre **SQL Editor**, pega todo el contenido de [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) y ejecútalo. Eso crea las tablas, las funciones, las políticas de seguridad, el bucket de fotos y las categorías iniciales.
+2. Abre **SQL Editor** y ejecuta, **en orden**, cada archivo de [`supabase/migrations/`](supabase/migrations/) (`0001_init.sql`, `0002_fix_role_trigger.sql`, …). Eso crea las tablas, las funciones, las políticas de seguridad, el bucket de fotos y las categorías iniciales.
 3. En **Authentication → Sign In / Providers → Email**, decide si quieres pedir confirmación por correo:
    - **Desactivada:** la clienta entra en cuando se registra. Es lo más práctico en un pueblo.
    - **Activada:** la app le avisa que revise su correo antes de iniciar sesión.
