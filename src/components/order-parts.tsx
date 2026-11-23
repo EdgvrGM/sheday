@@ -107,7 +107,7 @@ export function OrderCard({ order, href, showCustomer }: { order: Order; href: s
             {pieces} {pieces === 1 ? "pieza" : "piezas"}
             {order.order_items.some((i) => i.is_preorder) ? " · incluye sobre pedido" : ""}
           </span>
-          <span className="font-bold text-brand">{formatMoney(order.subtotal)}</span>
+          <span className="font-semibold">{formatMoney(order.subtotal)}</span>
         </div>
       </Card>
     </Link>

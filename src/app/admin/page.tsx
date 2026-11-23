@@ -127,11 +127,11 @@ function AdminProductRow({ product }: { product: Product }) {
         <Thumb path={product.product_images[0]?.path ?? null} className="h-[70px] w-14" />
         <div className="flex flex-1 flex-col gap-1">
           <span className="line-clamp-1">{product.name}</span>
-          <span className="font-bold text-brand">{formatMoney(product.price)}</span>
+          <span className="font-semibold">{formatMoney(product.price)}</span>
           <div className="flex flex-wrap gap-1">
             {!product.is_active && <Badge className="bg-surface text-muted">Oculto</Badge>}
             {product.mode === "preorder" ? (
-              <Badge className="bg-blue-50 text-blue-700">Sobre pedido</Badge>
+              <Badge className="bg-ink text-white">Sobre pedido</Badge>
             ) : (
               <Badge className={stock <= 2 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}>{stock} en stock</Badge>
             )}

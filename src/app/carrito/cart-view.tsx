@@ -39,14 +39,14 @@ export function CartView() {
                   type="button"
                   aria-label="Quitar del carrito"
                   onClick={() => cart.remove(item.variantId)}
-                  className="-m-1 p-1 text-muted hover:text-red-700">
+                  className="-m-2.5 flex size-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-red-700">
                   <Trash2 className="size-5" />
                 </button>
               </div>
               <p className="text-xs text-muted">{[item.size, item.color].filter(Boolean).join(" · ")}</p>
-              {item.isPreorder && <Badge className="bg-blue-50 text-blue-700">Sobre pedido</Badge>}
+              {item.isPreorder && <Badge className="bg-ink text-white">Sobre pedido</Badge>}
               <div className="mt-auto flex items-center justify-between">
-                <span className="font-bold text-brand">{formatMoney(item.price * item.quantity)}</span>
+                <span className="font-semibold">{formatMoney(item.price * item.quantity)}</span>
                 <QuantityStepper
                   value={item.quantity}
                   max={item.isPreorder || item.maxStock == null ? 99 : item.maxStock}

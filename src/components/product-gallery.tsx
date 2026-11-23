@@ -13,7 +13,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
 
   if (images.length === 0) {
     return (
-      <div className="flex aspect-[4/5] items-center justify-center rounded-2xl bg-surface">
+      <div className="flex aspect-[4/5] items-center justify-center rounded-xl bg-surface">
         <Shirt className="size-16 text-line" />
       </div>
     );
@@ -30,7 +30,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         <div
           ref={scroller}
           onScroll={(e) => setIndex(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto md:rounded-2xl">
+          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto md:rounded-xl">
           {images.map((src, i) => (
             <div key={src} className="relative aspect-[4/5] w-full shrink-0 snap-center bg-surface">
               <Image

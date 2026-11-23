@@ -19,6 +19,18 @@ export function formatDate(iso: string): string {
   return dateFmt.format(new Date(iso));
 }
 
+const MX_TZ = "America/Mexico_City";
+const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: MX_TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const arrivalFmt = new Intl.DateTimeFormat("es-MX", { timeZone: MX_TZ, weekday: "long", day: "numeric", month: "long" });
+
+/** "Llegó hoy", "Llegó ayer" o "Llegó el jueves 21 de noviembre" (hora de México). */
+export function arrivalLabel(iso: string, now = new Date()): string {
+  const day = dayKey.format(new Date(iso));
+  if (day === dayKey.format(now)) return "Llegó hoy";
+  if (day === dayKey.format(new Date(now.getTime() - 86_400_000))) return "Llegó ayer";
+  return `Llegó el ${arrivalFmt.format(new Date(iso)).replace(",", "")}`;
+}
+
 /** Etiqueta y clases de Tailwind para cada estado de pedido. */
 export const ORDER_STATUS: Record<OrderStatus, { label: string; className: string }> = {
   pending: { label: "Pendiente", className: "bg-amber-50 text-amber-700" },

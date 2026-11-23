@@ -125,7 +125,7 @@ export function ProductPurchase({
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button icon={ShoppingBag} disabled={!canAdd} onClick={() => add(true)} className="flex-1">
-          {!variant ? "Elige talla y color" : canAdd ? "Comprar" : "Agotado"}
+          {!variant ? (colors.length > 1 ? "Elige talla y color" : "Elige tu talla") : canAdd ? "Comprar" : "Agotado"}
         </Button>
         <Button kind="secondary" disabled={!canAdd} onClick={() => add(false)} className="flex-1">
           Agregar al carrito

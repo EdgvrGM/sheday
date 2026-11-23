@@ -5,7 +5,7 @@ import { useLayoutEffect, useRef, useState, type InputHTMLAttributes } from "rea
 
 import { groupPhone, MAX, phoneInput } from "@/lib/input";
 
-import { cn, inputClass } from "./ui";
+import { cn, FieldNote, fieldId, inputClass } from "./ui";
 
 type BaseProps = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> & {
   label: string;
@@ -20,9 +20,14 @@ function Wrapper({ label, hint, error, children }: { label: string; hint?: strin
     <label className="flex flex-col gap-1">
       <span className="text-sm font-semibold">{label}</span>
       {children}
-      {error ? <span className="text-xs text-red-700">{error}</span> : hint && <span className="text-xs text-muted">{hint}</span>}
+      <FieldNote id={`${fieldId(label)}-note`} hint={hint} error={error} />
     </label>
   );
+}
+
+/** Props para ligar el input con su ayuda/error. */
+function noteProps(label: string, hint?: string, error?: string | null) {
+  return error || hint ? { "aria-describedby": `${fieldId(label)}-note` } : {};
 }
 
 /**
@@ -86,6 +91,7 @@ export function PhoneField({ label, hint, error, value, onChange, className, ...
           value={groupPhone(value)}
           onChange={handleChange}
           aria-invalid={incomplete || !!error}
+          {...noteProps(label, hint ?? "10 dígitos", error)}
           className={cn(inputClass, "pl-16 tracking-wide", className)}
           {...props}
         />
@@ -109,6 +115,8 @@ export function PasswordField({ label, hint, error, value, onChange, className, 
           value={value}
           onChange={(e) => onChange(e.target.value.slice(0, MAX.password))}
           className={cn(inputClass, "pr-12", className)}
+          aria-invalid={error ? true : undefined}
+          {...noteProps(label, hint, error)}
           {...props}
         />
         <button

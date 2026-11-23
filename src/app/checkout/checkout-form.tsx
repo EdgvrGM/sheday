@@ -27,6 +27,7 @@ export function CheckoutForm() {
   const [addressDraft, setAddress] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"name" | "phone" | "address", string>>>({});
   const [placing, setPlacing] = useState(false);
 
   const name = nameDraft ?? profile?.full_name ?? "";
@@ -50,9 +51,16 @@ export function CheckoutForm() {
   async function placeOrder(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!isValidName(name)) return setError("Escribe tu nombre.");
-    if (!isValidPhone(phone)) return setError("Escribe tu celular a 10 dígitos.");
-    if (address.trim().length < 5) return setError("Escribe la dirección de entrega.");
+    const errs: typeof fieldErrors = {};
+    if (!isValidName(name)) errs.name = "Escribe tu nombre.";
+    if (!isValidPhone(phone)) errs.phone = phone ? `Faltan ${10 - phone.length} dígitos.` : "Escribe tu celular.";
+    if (address.trim().length < 5) errs.address = "Escribe la dirección: calle, número y colonia.";
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      const form = e.currentTarget as HTMLFormElement;
+      setTimeout(() => form.querySelector<HTMLElement>("[aria-invalid=true]")?.focus(), 0);
+      return;
+    }
 
     setPlacing(true);
     const { data: orderId, error } = await getSupabase().rpc("place_order", {
@@ -78,7 +86,11 @@ export function CheckoutForm() {
         <Field
           label="Nombre"
           value={name}
-          onChange={(e) => setName(nameInput(e.target.value))}
+          onChange={(e) => {
+            setName(nameInput(e.target.value));
+            setFieldErrors((f) => ({ ...f, name: undefined }));
+          }}
+          error={fieldErrors.name}
           autoComplete="name"
           autoCapitalize="words"
           maxLength={MAX.name}
@@ -87,14 +99,22 @@ export function CheckoutForm() {
         <PhoneField
           label="Celular de contacto (WhatsApp)"
           value={phone}
-          onChange={setPhone}
+          onChange={(v) => {
+            setPhone(v);
+            setFieldErrors((f) => ({ ...f, phone: undefined }));
+          }}
+          error={fieldErrors.phone}
           hint="Te escribiremos a este número para coordinar la entrega."
           required
         />
         <TextArea
           label="Dirección de entrega"
           value={address}
-          onChange={(e) => setAddress(textInput(e.target.value, MAX.address))}
+          onChange={(e) => {
+            setAddress(textInput(e.target.value, MAX.address));
+            setFieldErrors((f) => ({ ...f, address: undefined }));
+          }}
+          error={fieldErrors.address}
           maxLength={MAX.address}
           placeholder="Calle, número, colonia, referencias"
           autoComplete="street-address"
@@ -117,7 +137,7 @@ export function CheckoutForm() {
               <span>
                 {i.quantity} × {i.name}{" "}
                 <span className="text-muted">({[i.size, i.color].filter(Boolean).join(", ")})</span>
-                {i.isPreorder && <span className="text-blue-700"> · sobre pedido</span>}
+                {i.isPreorder && <span className="font-medium"> (sobre pedido)</span>}
               </span>
               <span className="font-semibold whitespace-nowrap">{formatMoney(i.price * i.quantity)}</span>
             </div>

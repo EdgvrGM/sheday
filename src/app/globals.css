@@ -1,14 +1,25 @@
 @import "tailwindcss";
 
+/*
+ * Sistema visual de Sheday
+ * - Un solo acento: rosa mexicano. `brand` para acciones, `brand-bright`
+ *   solo para superficies grandes (la banda de "lo que llegó").
+ * - Texto ciruela y grises con tinte rosado (una sola familia de grises).
+ * - Formas: acciones/chips/etiquetas = píldora; fotos/tarjetas/campos = 12px
+ *   (rounded-xl); miniaturas = 8px (rounded-lg).
+ * - Bodoni Moda (font-display) solo para la marca y títulos de 24px o más.
+ */
 @theme {
-  --color-brand: #c2185b;
-  --color-brand-dark: #8e0f43;
-  --color-brand-soft: #fce4ec;
-  --color-ink: #1f1a1c;
-  --color-muted: #6e6468;
-  --color-surface: #f7f3f4;
-  --color-line: #e8dfe2;
+  --color-brand: #c4006a;
+  --color-brand-dark: #9e0056;
+  --color-brand-bright: #e4007c;
+  --color-brand-soft: #ffe3f1;
+  --color-ink: #2b1226;
+  --color-muted: #6b5763;
+  --color-surface: #f8f2f5;
+  --color-line: #ebdde4;
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
 }
 
 html {
@@ -18,6 +29,17 @@ html {
 body {
   background: #ffffff;
   color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-brand-soft);
+  color: var(--color-ink);
+}
+
+/* Foco visible y consistente para teclado en todos los controles. */
+:where(a, button, [role="switch"], summary, input[type="checkbox"]):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }
 
 /* Inputs de 16px evitan el zoom automático de iOS al enfocar. */
@@ -33,4 +55,16 @@ textarea {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Respeta "reducir movimiento" del sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

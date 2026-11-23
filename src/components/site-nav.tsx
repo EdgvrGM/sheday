@@ -29,7 +29,7 @@ function CartBadge() {
   const { count } = useCart();
   if (count === 0) return null;
   return (
-    <span className="absolute -top-1.5 -right-2 flex min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white">
+    <span className="absolute -top-1.5 -right-2 flex min-w-5 items-center justify-center rounded-full bg-brand px-1 text-xs font-bold text-white">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -42,7 +42,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="text-2xl font-extrabold tracking-tight text-brand">
+        <Link href="/" aria-label="Sheday, inicio" className="font-display text-[1.9rem] leading-none font-semibold italic text-brand">
           Sheday
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
@@ -84,7 +84,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={cn("flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium", active ? "text-brand" : "text-muted")}>
+              className={cn("flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium", active ? "text-brand" : "text-muted")}>
               <span className="relative">
                 <Icon className="size-6" strokeWidth={active ? 2.4 : 1.8} />
                 {href === "/carrito" && <CartBadge />}

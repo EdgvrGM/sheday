@@ -8,6 +8,12 @@
       "port": 3000
     },
     {
+      "name": "sheday-prod",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "start", "--port", "3100"],
+      "port": 3100
+    },
+    {
       "name": "sheday-cf-preview",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["opennextjs-cloudflare", "preview", "--port", "8787"],

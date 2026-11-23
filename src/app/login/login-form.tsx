@@ -63,7 +63,7 @@ export function LoginForm({ next }: { next: string }) {
 
   return (
     <form onSubmit={submit} noValidate className="mx-auto flex w-full max-w-md flex-col gap-4 py-4">
-      <PageTitle sub="Inicia sesión con tu celular para hacer tu pedido.">Hola de nuevo 👋</PageTitle>
+      <PageTitle sub="Entra con tu celular para hacer tu pedido.">Inicia sesión</PageTitle>
       {error && <ErrorBox message={error} />}
       {useEmail ? (
         <Field

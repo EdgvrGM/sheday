@@ -60,6 +60,19 @@ export function totalStock(p: Product): number {
   return p.product_variants.reduce((sum, v) => sum + v.stock, 0);
 }
 
+/** Días que un producto se considera "Nuevo". */
+export const NEW_DAYS = 7;
+
+export function isNew(p: Product, now = Date.now()): boolean {
+  return now - new Date(p.created_at).getTime() < NEW_DAYS * 24 * 60 * 60 * 1000;
+}
+
+/** Tallas que se pueden pedir ahora (en stock: solo las que tienen piezas). */
+export function availableSizes(p: Product): string[] {
+  const sizes = p.product_variants.filter((v) => p.mode === "preorder" || v.stock > 0).map((v) => v.size);
+  return [...new Set(sizes)];
+}
+
 export function isAvailable(p: Product): boolean {
   return p.mode === "preorder" ? p.product_variants.length > 0 : totalStock(p) > 0;
 }

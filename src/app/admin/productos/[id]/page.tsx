@@ -241,13 +241,13 @@ export default function AdminProductPage() {
               {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:) */}
               <img src={img.preview} alt="" className="h-full w-full object-cover" />
               {idx === 0 && (
-                <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-brand px-1.5 text-[10px] font-bold text-white">
+                <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-brand px-2 text-xs font-bold text-white">
                   <Star className="size-3" /> Portada
                 </span>
               )}
               <div className="absolute inset-x-1 top-1 flex justify-between">
                 <div className="flex rounded-full bg-black/50 text-white">
-                  <button type="button" aria-label="Mover a la izquierda" disabled={idx === 0} onClick={() => moveImage(idx, -1)} className="p-1 disabled:opacity-30">
+                  <button type="button" aria-label="Mover a la izquierda" disabled={idx === 0} onClick={() => moveImage(idx, -1)} className="p-2 disabled:opacity-30">
                     <ChevronLeft className="size-4" />
                   </button>
                   <button
@@ -255,11 +255,11 @@ export default function AdminProductPage() {
                     aria-label="Mover a la derecha"
                     disabled={idx === images.length - 1}
                     onClick={() => moveImage(idx, 1)}
-                    className="p-1 disabled:opacity-30">
+                    className="p-2 disabled:opacity-30">
                     <ChevronRight className="size-4" />
                   </button>
                 </div>
-                <button type="button" aria-label="Quitar foto" onClick={() => removeImage(img)} className="rounded-full bg-black/50 p-1 text-white">
+                <button type="button" aria-label="Quitar foto" onClick={() => removeImage(img)} className="rounded-full bg-black/50 p-2 text-white">
                   <X className="size-4" />
                 </button>
               </div>

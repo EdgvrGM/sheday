@@ -21,6 +21,8 @@ export function RegisterForm({ next }: { next: string }) {
   const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Errores junto a cada campo (se muestran al intentar enviar)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"name" | "phone" | "email" | "password", string>>>({});
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
@@ -31,10 +33,18 @@ export function RegisterForm({ next }: { next: string }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!isValidName(fullName)) return setError("Escribe tu nombre.");
-    if (!isValidPhone(phone)) return setError("Escribe tu celular a 10 dígitos.");
-    if (!isValidEmail(email)) return setError("Escribe un correo válido, por ejemplo ana@gmail.com.");
-    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    const errs: typeof fieldErrors = {};
+    if (!isValidName(fullName)) errs.name = "Escribe tu nombre.";
+    if (!isValidPhone(phone)) errs.phone = phone ? `Faltan ${10 - phone.length} dígitos.` : "Escribe tu celular.";
+    if (!isValidEmail(email)) errs.email = email ? "Revisa el correo, por ejemplo ana@gmail.com." : "Escribe tu correo.";
+    if (password.length < 6) errs.password = "Usa al menos 6 caracteres.";
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      // Lleva el foco al primer campo con error (después de pintar los errores)
+      const form = e.currentTarget as HTMLFormElement;
+      setTimeout(() => form.querySelector<HTMLElement>("[aria-invalid=true]")?.focus(), 0);
+      return;
+    }
 
     setLoading(true);
     const { data, error } = await getSupabase().auth.signUp({
@@ -79,31 +89,52 @@ export function RegisterForm({ next }: { next: string }) {
       <Field
         label="Nombre completo"
         value={fullName}
-        onChange={(e) => setFullName(nameInput(e.target.value))}
+        onChange={(e) => {
+          setFullName(nameInput(e.target.value));
+          setFieldErrors((f) => ({ ...f, name: undefined }));
+        }}
+        error={fieldErrors.name}
         autoComplete="name"
         autoCapitalize="words"
         maxLength={MAX.name}
         required
       />
-      <PhoneField label="Celular (WhatsApp)" value={phone} onChange={setPhone} hint="Con este número iniciarás sesión." required />
+      <PhoneField
+        label="Celular (WhatsApp)"
+        value={phone}
+        onChange={(v) => {
+          setPhone(v);
+          setFieldErrors((f) => ({ ...f, phone: undefined }));
+        }}
+        hint="Con este número iniciarás sesión."
+        error={fieldErrors.phone}
+        required
+      />
       <Field
         label="Correo"
         type="email"
         inputMode="email"
         value={email}
-        onChange={(e) => setEmail(emailInput(e.target.value))}
+        onChange={(e) => {
+          setEmail(emailInput(e.target.value));
+          setFieldErrors((f) => ({ ...f, email: undefined }));
+        }}
+        error={fieldErrors.email}
         autoComplete="email"
         maxLength={MAX.email}
         hint="Te enviaremos un enlace para confirmar tu cuenta."
-        aria-invalid={email.length > 0 && !isValidEmail(email) ? true : undefined}
         required
       />
       <PasswordField
         label="Contraseña"
         value={password}
-        onChange={setPassword}
+        onChange={(v) => {
+          setPassword(v);
+          setFieldErrors((f) => ({ ...f, password: undefined }));
+        }}
         autoComplete="new-password"
         hint="Mínimo 6 caracteres"
+        error={fieldErrors.password}
         minLength={6}
         required
       />

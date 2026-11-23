@@ -87,16 +87,16 @@ export default async function ProductPage(props: PageProps<"/producto/[slug]">) 
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           {isPreorder ? (
-            <Badge className="bg-blue-50 text-blue-700">Sobre pedido</Badge>
+            <Badge className="bg-ink text-white">Sobre pedido</Badge>
           ) : (
             <Badge className="bg-green-50 text-green-700">Entrega inmediata</Badge>
           )}
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{product.name}</h1>
-          <p className="text-2xl font-bold text-brand">{formatMoney(product.price)}</p>
+          <h1 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">{product.name}</h1>
+          <p className="text-2xl font-semibold">{formatMoney(product.price)}</p>
         </div>
 
         {isPreorder && (
-          <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-900">
+          <p className="rounded-xl bg-surface p-4 text-sm">
             Lo pedimos especialmente para ti
             {product.preorder_days ? `; llega en aproximadamente ${product.preorder_days} días` : ""}. Se pide un
             anticipo al confirmar.

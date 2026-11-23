@@ -16,13 +16,13 @@ export default function OpengraphImage() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #fce4ec 0%, #ffffff 60%)",
+          background: "#e4007c",
           fontFamily: "sans-serif",
         }}>
-        <div style={{ fontSize: 160, fontWeight: 800, color: "#c2185b", letterSpacing: -4 }}>Sheday</div>
-        <div style={{ fontSize: 44, color: "#1f1a1c", marginTop: 8 }}>Ropa para mujer</div>
-        <div style={{ fontSize: 32, color: "#6e6468", marginTop: 24 }}>
-          Entrega inmediata · Sobre pedido · Pago en efectivo
+        <div style={{ fontSize: 170, fontWeight: 700, color: "#ffffff", letterSpacing: -4 }}>Sheday</div>
+        <div style={{ fontSize: 46, color: "#ffffff", marginTop: 8 }}>Ropa para mujer</div>
+        <div style={{ fontSize: 32, color: "#ffffff", marginTop: 24 }}>
+          Entrega inmediata o sobre pedido, pagas al recibir
         </div>
       </div>
     ),

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Bodoni_Moda, Plus_Jakarta_Sans } from "next/font/google";
 
 import { AuthProvider } from "@/components/auth-provider";
 import { BottomNav, SiteHeader } from "@/components/site-nav";
@@ -9,6 +9,8 @@ import { SITE_URL } from "@/lib/env";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], display: "swap" });
+// Didona de revista de moda: solo para la marca y títulos grandes
+const bodoni = Bodoni_Moda({ variable: "--font-bodoni", subsets: ["latin"], display: "swap", style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#c2185b",
+  themeColor: "#c4006a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -30,7 +32,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es-MX" className={`${jakarta.variable} antialiased`}>
+    <html lang="es-MX" className={`${jakarta.variable} ${bodoni.variable} antialiased`}>
       <body className="flex min-h-dvh flex-col font-sans">
         <AuthProvider>
           <ToastProvider>

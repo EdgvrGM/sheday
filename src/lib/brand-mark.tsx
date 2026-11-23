@@ -10,7 +10,7 @@ export function BrandMark({ size, rounded = true }: { size: number; rounded?: bo
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#c2185b",
+        background: "#c4006a",
         borderRadius: rounded ? size * 0.22 : 0,
         color: "#ffffff",
         fontSize: size * 0.62,

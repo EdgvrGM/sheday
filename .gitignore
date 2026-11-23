@@ -24,7 +24,12 @@ supabase/.branches/
 
 # Instrucciones locales para Claude Code
 CLAUDE.md
-.claude/settings.local.json
+AGENTS.md
+.claude/
+
+# Skills de agentes instalados localmente (npx skills)
+.agents/
+skills-lock.json
 
 # debug
 npm-debug.log*

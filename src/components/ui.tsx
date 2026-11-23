@@ -19,8 +19,8 @@ const BUTTON_STYLES: Record<ButtonKind, string> = {
 
 export function buttonClass(kind: ButtonKind = "primary", extra?: string) {
   return cn(
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-[1.5px] px-5 font-semibold transition",
-    "disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-full border-[1.5px] px-6 font-semibold transition",
+    "disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]",
     BUTTON_STYLES[kind],
     extra
   );
@@ -77,19 +77,52 @@ export function ButtonLink({
 
 // ---------- Formularios ----------
 const inputClass =
-  "w-full rounded-lg border border-line bg-white px-3 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 aria-[invalid=true]:border-red-400";
+  "w-full rounded-xl border border-line bg-white px-3.5 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 aria-[invalid=true]:border-red-400";
+
+/** id estable para ligar el mensaje de ayuda/error a su campo. */
+export function fieldId(label: string) {
+  return `f-${label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
+}
+
+/** Ayuda o error debajo del campo (el error reemplaza a la ayuda). */
+export function FieldNote({ id, hint, error }: { id: string; hint?: string; error?: string | null }) {
+  if (error) {
+    return (
+      <span id={id} className="text-sm font-medium text-red-700">
+        {error}
+      </span>
+    );
+  }
+  return hint ? (
+    <span id={id} className="text-xs text-muted">
+      {hint}
+    </span>
+  ) : null;
+}
 
 export function Field({
   label,
   hint,
+  error,
   className,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string; error?: string | null }) {
+  const id = fieldId(label);
   return (
     <label className={cn("flex flex-col gap-1", className)}>
       <span className="text-sm font-semibold">{label}</span>
-      <input className={inputClass} {...props} />
-      {hint && <span className="text-xs text-muted">{hint}</span>}
+      <input
+        className={inputClass}
+        aria-invalid={error ? true : props["aria-invalid"]}
+        aria-describedby={error || hint ? `${id}-note` : undefined}
+        {...props}
+      />
+      <FieldNote id={`${id}-note`} hint={hint} error={error} />
     </label>
   );
 }
@@ -97,14 +130,22 @@ export function Field({
 export function TextArea({
   label,
   hint,
+  error,
   className,
   ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string }) {
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string; error?: string | null }) {
+  const id = fieldId(label);
   return (
     <label className={cn("flex flex-col gap-1", className)}>
       <span className="text-sm font-semibold">{label}</span>
-      <textarea rows={3} className={cn(inputClass, "resize-y")} {...props} />
-      {hint && <span className="text-xs text-muted">{hint}</span>}
+      <textarea
+        rows={3}
+        className={cn(inputClass, "resize-y")}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error || hint ? `${id}-note` : undefined}
+        {...props}
+      />
+      <FieldNote id={`${id}-note`} hint={hint} error={error} />
     </label>
   );
 }
@@ -112,11 +153,18 @@ export function TextArea({
 export { inputClass };
 
 // ---------- Chips ----------
-export function chipClass(selected?: boolean, disabled?: boolean) {
+/**
+ * `solid`: filtro o elección principal (seleccionado en rosa).
+ * `subtle`: filtro secundario, como las categorías (seleccionado en ciruela con borde),
+ * para que no compita con el principal.
+ */
+export function chipClass(selected?: boolean, disabled?: boolean, variant: "solid" | "subtle" = "solid") {
   return cn(
-    "inline-flex shrink-0 items-center rounded-full border px-4 py-2 text-sm font-medium transition whitespace-nowrap",
+    "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition whitespace-nowrap",
     selected
-      ? "border-brand bg-brand text-white"
+      ? variant === "solid"
+        ? "border-brand bg-brand text-white"
+        : "border-ink bg-white font-semibold text-ink"
       : disabled
         ? "border-line bg-surface text-muted line-through"
         : "border-line bg-white text-ink hover:border-brand/50"
@@ -147,7 +195,7 @@ export function Badge({ children, className }: { children: ReactNode; className?
 }
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("flex flex-col gap-2 rounded-2xl border border-line bg-white p-4", className)}>{children}</div>;
+  return <div className={cn("flex flex-col gap-2 rounded-xl border border-line bg-white p-4", className)}>{children}</div>;
 }
 
 export function Spinner({ className }: { className?: string }) {
@@ -181,7 +229,7 @@ export function EmptyState({
 
 export function ErrorBox({ message }: { message: string }) {
   return (
-    <div role="alert" className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+    <div role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700">
       <AlertCircle className="size-5 shrink-0" />
       {message}
     </div>
@@ -191,7 +239,7 @@ export function ErrorBox({ message }: { message: string }) {
 export function PageTitle({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{children}</h1>
+      <h1 className="font-display text-3xl font-semibold text-balance md:text-4xl">{children}</h1>
       {sub && <p className="text-muted">{sub}</p>}
     </div>
   );
@@ -208,7 +256,7 @@ export function QuantityStepper({
   min?: number;
   max?: number;
 }) {
-  const btn = "flex size-9 items-center justify-center rounded-full text-lg font-semibold hover:bg-surface disabled:opacity-30";
+  const btn = "flex size-11 items-center justify-center rounded-full text-xl font-semibold hover:bg-surface disabled:opacity-30";
   return (
     <div className="inline-flex items-center rounded-full border border-line px-1">
       <button type="button" aria-label="Menos" className={btn} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>
