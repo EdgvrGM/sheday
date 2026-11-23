@@ -1,18 +1,20 @@
 {
   "expo": {
-    "name": "shopAPP",
-    "slug": "shopAPP",
+    "name": "Sheday",
+    "slug": "sheday",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "shopapp",
-    "userInterfaceStyle": "automatic",
+    "scheme": "sheday",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.sheday.app",
+      "supportsTablet": true
     },
     "android": {
+      "package": "com.sheday.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FCE4EC",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -20,7 +22,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "server",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -28,9 +30,17 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#FCE4EC",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sheday usa tus fotos para subir imágenes de productos.",
+          "cameraPermission": "Sheday usa la cámara para fotografiar productos."
         }
       ]
     ],

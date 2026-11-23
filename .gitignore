@@ -30,8 +30,21 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (llaves de Supabase)
+.env
 .env*.local
+
+# Supabase CLI (local)
+supabase/.temp/
+supabase/.branches/
+
+# Instrucciones locales para Claude Code
+CLAUDE.md
+.claude/settings.local.json
+
+# Editores / SO
+.idea/
+Thumbs.db
 
 # typescript
 *.tsbuildinfo
