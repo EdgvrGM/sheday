@@ -1,12 +1,13 @@
 # Sheday
 
-App de pedidos para la reventa local de ropa (principalmente de mujer). Las clientas ven el catálogo, arman su carrito y confirman su pedido. El seguimiento se hace por WhatsApp, y la entrega y el pago son en efectivo. **No hay pasarela de pago.**
+Tienda en línea para la reventa local de ropa (principalmente de mujer). Las clientas ven el catálogo, arman su carrito y confirman su pedido. El seguimiento es por WhatsApp, y la entrega y el pago son en efectivo. **No hay pasarela de pago.**
 
-- **Android, iPhone y web** con el mismo código (Expo / React Native).
-- **Panel de administración** dentro de la misma app (pestaña *Admin*), que también funciona en el navegador de la computadora en modo local.
+- **Webapp optimizada para celular y escritorio**, desplegada en tu dominio. No requiere instalar nada; se puede "Agregar a pantalla de inicio" y se abre como app (PWA).
+- **Catálogo con buen SEO**: las páginas de producto se renderizan en el servidor, salen en Google y, al compartirlas por WhatsApp, muestran foto, nombre y precio.
+- **Panel de administración** en `/admin`: productos, pedidos, categorías y ajustes.
 - **Dos modalidades de producto:**
   - **En stock (entrega inmediata):** el inventario se descuenta al confirmar el pedido.
-  - **Sobre pedido:** no descuenta stock y calcula un **anticipo** (porcentaje configurable).
+  - **Sobre pedido:** no descuenta stock y pide un **anticipo** (porcentaje configurable).
 
 ---
 
@@ -14,105 +15,121 @@ App de pedidos para la reventa local de ropa (principalmente de mujer). Las clie
 
 | Capa | Tecnología |
 |---|---|
-| App | Expo SDK 58, React Native 0.88, React 19.3, TypeScript, Expo Router (rutas por archivos en `src/app/`) |
+| Web | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, `lucide-react` |
 | Backend | Supabase: Postgres, Auth (correo y contraseña), Storage (fotos), RLS |
-| Sesión y carrito | `localStorage` (en iOS/Android lo provee `expo-sqlite/localStorage`) |
-| Imágenes | `expo-image`, `expo-image-picker` |
-| Íconos | `@expo/vector-icons` (Ionicons) |
+| Hosting | Cloudflare Workers (plan gratis) con el adaptador `@opennextjs/cloudflare` |
+
+### Cómo está armado
+- **Páginas públicas** (`/`, `/producto/...`, `sitemap.xml`): se renderizan en el **servidor** con un cliente anónimo de Supabase. Son rápidas, indexables y sin caché: lo que cambies en el admin se ve al instante.
+- **Páginas privadas** (carrito, checkout, pedidos, cuenta, admin): corren en el **navegador** con la sesión de la usuaria. La seguridad la dan las políticas **RLS** de Supabase, no la interfaz.
+- **Fotos:** se comprimen en el navegador al subirlas (WebP, máximo 1200 px, unos 150 KB) y se sirven desde Supabase Storage. No se usa el servicio de imágenes de Cloudflare, que es de pago.
 
 ---
 
-## Puesta en marcha
+## Desarrollo local
 
-### 1. Crear el proyecto en Supabase
-
-1. Crea un proyecto gratuito en <https://supabase.com>.
-2. Abre **SQL Editor** y ejecuta, **en orden**, cada archivo de [`supabase/migrations/`](supabase/migrations/) (`0001_init.sql`, `0002_fix_role_trigger.sql`, …). Eso crea las tablas, las funciones, las políticas de seguridad, el bucket de fotos y las categorías iniciales.
-3. En **Authentication → Sign In / Providers → Email**, decide si quieres pedir confirmación por correo:
-   - **Desactivada:** la clienta entra en cuando se registra. Es lo más práctico en un pueblo.
-   - **Activada:** la app le avisa que revise su correo antes de iniciar sesión.
+### 1. Supabase (una sola vez)
+1. Crea un proyecto en <https://supabase.com>.
+2. En **SQL Editor**, ejecuta **en orden** cada archivo de [`supabase/migrations/`](supabase/migrations/): `0001_init.sql`, `0002_fix_role_trigger.sql`, …
+3. En **Authentication → URL Configuration**:
+   - **Site URL:** `https://sheday.mx` (o `http://localhost:3000` mientras desarrollas).
+   - **Redirect URLs:** agrega `http://localhost:3000/**` y `https://sheday.mx/**` y `https://www.sheday.mx/**`. Sin esto, los enlaces de confirmación de correo y de recuperar contraseña no funcionan.
+4. Opcional: en **Authentication → Sign In / Providers → Email**, desactiva **Confirm email** para que las clientas entren en cuanto se registran.
 
 ### 2. Variables de entorno
-
 ```bash
 cp .env.example .env.local
 ```
-
-Llena `.env.local` con los valores de **Project Settings → API Keys / Data API**:
-
 ```
-EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
+Usa solo la llave **publishable**, nunca la *secret*. **Reinicia `npm run dev` después de cambiar `.env.local`.**
 
-> Usa solo la llave **publishable** (pública), nunca la *secret / service_role*. La seguridad depende de las políticas RLS.
-
-### 3. Instalar y correr
-
+### 3. Correr
 ```bash
 npm install
-npm run web        # panel/admin en el navegador: http://localhost:8081
-npm start          # QR para abrir en el celular
+npm run dev        # http://localhost:3000
 ```
 
-En el celular, después de `npm start`, escanea el QR. `expo-sqlite` y `expo-image-picker` vienen incluidos en Expo Go, así que no hace falta un *development build* para empezar.
-
 ### 4. Volverte administradora
+Regístrate en la web y luego, en el SQL Editor, ejecuta:
+```sql
+update public.profiles set role = 'admin'
+ where id = (select id from auth.users where email = 'TU_CORREO');
+```
+Recarga la página: aparece **Admin** en el menú. En **Admin → Ajustes**, guarda el WhatsApp de la tienda y el % de anticipo.
 
-1. Regístrate desde la app con tu correo.
-2. En Supabase → SQL Editor, ejecuta:
-   ```sql
-   update public.profiles set role = 'admin'
-    where id = (select id from auth.users where email = 'TU_CORREO');
-   ```
-3. Cierra sesión y vuelve a entrar. Aparece la pestaña **Admin**.
-4. En **Admin → Ajustes**, guarda el **número de WhatsApp de la tienda** (sin él, el botón de seguimiento no funciona) y el **% de anticipo**.
+---
+
+## Despliegue en Cloudflare (gratis)
+
+Cloudflare compila el proyecto en sus servidores cada vez que haces push a GitHub.
+
+1. **Sube el repo a GitHub.**
+2. En <https://dash.cloudflare.com>, ve a **Workers & Pages → Create → Import a repository** y elige el repo.
+   - **Build command:** `npx opennextjs-cloudflare build`
+   - **Deploy command:** `npx wrangler deploy`
+   - El nombre del Worker debe coincidir con `"name"` en `wrangler.jsonc` (hoy: `sheday`).
+3. En **Settings → Variables and Secrets** del Worker, agrega como **variables de build** (Build variables):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `NEXT_PUBLIC_SITE_URL` = `https://sheday.mx`
+   - `NODE_VERSION` = `22`, si el build se queja de la versión de Node.
+
+   Las variables `NEXT_PUBLIC_*` se incrustan al compilar: si las cambias, vuelve a desplegar.
+4. **Dominio `sheday.mx`:**
+   1. En Cloudflare, ve a **Add a domain**, escribe `sheday.mx` y elige el plan **Free**. Cloudflare te dará 2 *nameservers*.
+   2. En el panel de tu registrador (donde compraste el `.mx`), reemplaza los nameservers por los de Cloudflare. El cambio puede tardar de unos minutos a 24 horas; Cloudflare te avisa por correo cuando el dominio está activo.
+   3. En el Worker, ve a **Settings → Domains & Routes → Add → Custom domain** y agrega `sheday.mx` y luego `www.sheday.mx`. Cloudflare crea los registros DNS y el certificado SSL.
+   4. Para que `www` redirija al dominio principal, ve a **sheday.mx → Rules → Redirect Rules → Create rule → plantilla "Redirect from WWW to root"**. Así todos los enlaces quedan como `https://sheday.mx/...`, que es mejor para el SEO.
+   5. Si el dominio tiene correo configurado, por ejemplo en Google Workspace, revisa que Cloudflare haya importado sus registros MX antes de cambiar los nameservers.
+5. Actualiza la **Site URL** y las **Redirect URLs** en Supabase con tu dominio (paso 3 de la sección de Supabase).
+
+Para probar localmente con el runtime de Cloudflare: `npm run preview` (http://localhost:8787). En Windows funciona, aunque OpenNext no lo garantiza oficialmente.
+
+### Límites del plan gratis de Workers
+- 100,000 peticiones al día, de sobra para una tienda local.
+- Tamaño del Worker: 3 MiB comprimido. Hoy pesa unos 2.1 MiB.
+- 10 ms de CPU por petición. El tiempo esperando a Supabase no cuenta, pero si alguna página llegara a fallar con el error **1102** (límite de CPU), el plan **Workers Paid** cuesta **$5 USD al mes** y lo elimina.
 
 ---
 
 ## Cómo funciona
 
 ### Flujo de la clienta
-1. Ve el catálogo **sin registrarse**, con búsqueda y filtros (*Entrega inmediata* / *Sobre pedido* / categoría).
-2. En el producto elige talla, color y cantidad, y lo agrega al carrito. El carrito se guarda en el dispositivo.
-3. Para confirmar, inicia sesión o se registra con nombre, celular y dirección.
-4. Confirma el pedido: el servidor valida precios y existencias y descuenta el stock.
-5. Ve **"¡Pedido recibido!"** y un botón que abre **WhatsApp** con el resumen del pedido ya escrito, dirigido a la tienda.
-6. En **Mis pedidos** sigue el estado: Pendiente → Confirmado → (Pedido al proveedor) → En camino → Entregado.
-7. Puede **cancelar** mientras el pedido siga *Pendiente*. Las piezas vuelven al inventario.
+1. Ve el catálogo **sin registrarse**, con búsqueda y filtros: Entrega inmediata, Sobre pedido y categoría.
+2. En el producto elige talla, color y cantidad. Puede **Comprar** (va directo al carrito), **Agregar al carrito** o **Preguntar por WhatsApp**.
+3. Para confirmar, inicia sesión o se registra. Puede recuperar su contraseña por correo.
+4. Confirma: el servidor valida precios y existencias y descuenta el stock.
+5. Ve "¡Pedido recibido!" y un botón de WhatsApp con el resumen del pedido ya escrito.
+6. En **Pedidos** sigue el estado. Puede **cancelar** mientras el pedido siga *Pendiente*.
 
-### Flujo de administración (pestaña *Admin*)
-- **Resumen:** pedidos pendientes y productos con poco stock (2 piezas o menos).
-- **Pedidos:** filtro por estado. En el detalle puedes cambiar el estado, escribirle a la clienta por WhatsApp y guardar notas internas. Al cancelar, el stock se regresa solo.
-- **Productos:** crear y editar con fotos (galería o cámara; la primera es la portada), precio, categoría, modalidad, días estimados (sobre pedido), visible/oculto, y variantes de talla, color y stock (con botones rápidos XS–XL).
-- **Categorías:** agregar, renombrar, reordenar y eliminar.
-- **Ajustes:** WhatsApp de la tienda, % de anticipo y aviso de entrega.
-
-### Usar el admin desde la computadora (local)
-```bash
-npm run web
-```
-Abre <http://localhost:8081> e inicia sesión con tu cuenta admin. Es la misma app, así que no hay nada aparte que desplegar.
+### Administración (`/admin`)
+- **Resumen:** pedidos pendientes y productos con poco stock (2 o menos).
+- **Pedidos:** filtro por estado. En el detalle cambias el estado, escribes a la clienta por WhatsApp, la llamas y guardas notas internas. Al cancelar, el stock se regresa solo.
+- **Productos:** fotos desde la galería o la cámara del celular (se comprimen solas; la primera es la portada y se reordenan con flechas), precio, categoría, modalidad, visible/oculto, y tallas, colores y stock.
+- **Categorías** y **Ajustes** (WhatsApp, % de anticipo, aviso de entrega).
 
 ---
 
-## Estructura del proyecto
+## Estructura
 
 ```
-supabase/migrations/0001_init.sql   Esquema, funciones RPC, RLS, bucket y datos iniciales
+supabase/migrations/          Esquema, RPCs, RLS, bucket y seed (aplicar en orden)
 src/
-  app/                              Rutas (Expo Router: cada archivo es una pantalla)
-    _layout.tsx                     Providers + Stack con rutas protegidas
-    (tabs)/                         Pestañas: index (tienda), cart, orders, account, admin
-    product/[id].tsx                Detalle de producto
-    checkout.tsx                    Confirmar pedido            (requiere sesión)
-    order/[id].tsx                  Detalle/seguimiento         (requiere sesión)
-    login.tsx, register.tsx         Autenticación (modales)
-    admin/                          product/[id], order/[id], settings, categories (solo admin)
-  components/                       UI reutilizable (ui.tsx, product-card, order-card, order-summary)
-  constants/theme.ts                Colores, espaciados, tema de navegación
-  lib/                              supabase, queries, types, format, images, whatsapp, dialog, use-async
-  providers/                        auth.tsx (sesión/perfil/rol), cart.tsx (carrito persistente)
+  app/
+    layout.tsx                Layout raíz: AuthProvider, Toasts, header y barra inferior (celular)
+    page.tsx                  Catálogo (servidor) con filtros por URL (?q=&modo=&cat=)
+    producto/[slug]/          Detalle (servidor): metadatos OG, JSON-LD y redirección a la URL canónica
+    carrito/ checkout/ pedidos/ cuenta/          Cliente (navegador)
+    login/ registro/ recuperar/ restablecer/     Autenticación
+    admin/                    Panel (layout con RequireAdmin)
+    icon.tsx apple-icon.tsx manifest.ts opengraph-image.tsx robots.ts sitemap.ts
+  components/                 ui.tsx, site-nav, guards, auth-provider, toast, product-*, order-parts
+  lib/                        env, supabase/{browser,public}, queries, types, format, images, cart, whatsapp, errors
+wrangler.jsonc, open-next.config.ts   Configuración de Cloudflare
 ```
 
 ## Base de datos (resumen)
@@ -127,32 +144,23 @@ src/
 | `product_variants` | Talla, color y stock por combinación. |
 | `orders` / `order_items` | Pedido con copia de nombre, precio y talla al momento de comprar. Los números empiezan en #1001. |
 
-Funciones (RPC): `place_order`, `cancel_my_order`, `admin_set_order_status`, `delete_my_account`. Los pedidos **solo** se crean y cambian a través de ellas, para que el precio y el stock no dependan de lo que mande el celular.
+Funciones (RPC): `place_order`, `cancel_my_order`, `admin_set_order_status`, `delete_my_account`. Los pedidos **solo** se crean y cambian a través de ellas.
 
 ---
 
 ## Comandos
 
 ```bash
-npm run web            # correr en navegador
-npm start              # servidor de desarrollo (QR para el celular)
-npx tsc --noEmit       # typecheck
-npx expo lint          # lint
-npx expo install <pkg> # instalar dependencias compatibles con el SDK
-npx expo-doctor        # diagnosticar configuración
+npm run dev          # desarrollo (http://localhost:3000)
+npm run build        # build de Next.js
+npm run typecheck    # TypeScript
+npm run lint         # ESLint
+npm run preview      # build + runtime de Cloudflare local (http://localhost:8787)
+npm run deploy       # build + deploy manual a Cloudflare (requiere `npx wrangler login`)
 ```
 
-## Publicar en las tiendas (cuando estés lista)
-
-1. Cambia `ios.bundleIdentifier` / `android.package` en `app.json` (hoy: `com.sheday.app`) por uno tuyo y único.
-2. Reemplaza los íconos y el splash en `assets/images/`, que todavía son los de la plantilla de Expo.
-3. Compila con EAS: `npx eas-cli@latest build --platform android` (o `ios`).
-4. Cuentas: Google Play cobra unos $25 USD una sola vez; Apple, $99 USD al año.
-5. Apple pide borrar la cuenta desde la app: ya está en *Cuenta → Eliminar mi cuenta*.
-
 ## Pendientes / ideas
-
-- Íconos, splash y logo propios de Sheday.
-- Notificaciones push (nuevas llegadas, cambios de estado del pedido).
-- Reportes de ventas para el admin.
+- Logo y paleta definitivos. El ícono actual es una "S" provisional generada en `src/lib/brand-mark.tsx`.
+- Notificaciones (por ejemplo, avisos por WhatsApp o web push).
+- Reportes de ventas en el admin.
 - Al ocultar o borrar un producto, avisar si está en pedidos activos.

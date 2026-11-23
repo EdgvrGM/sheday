@@ -1,48 +1,38 @@
 {
   "name": "sheday",
-  "version": "1.0.0",
-  "main": "expo-router/entry",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+  },
   "dependencies": {
-    "@expo/ui": "~58.0.29",
-    "@expo/vector-icons": "^15.0.2",
+    "@opennextjs/cloudflare": "^1.20.18",
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.2",
-    "expo": "~58.0.26",
-    "expo-constants": "~58.0.16",
-    "expo-device": "~58.0.5",
-    "expo-font": "~58.0.12",
-    "expo-glass-effect": "~58.0.5",
-    "expo-image": "~58.0.18",
-    "expo-image-picker": "~58.0.10",
-    "expo-linking": "~58.0.17",
-    "expo-router": "~58.0.32",
-    "expo-splash-screen": "~58.0.14",
-    "expo-sqlite": "~58.0.18",
-    "expo-status-bar": "~58.0.5",
-    "expo-symbols": "~58.0.5",
-    "expo-system-ui": "~58.0.7",
-    "expo-web-browser": "~58.1.0",
+    "lucide-react": "^1.78.0",
+    "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-native": "0.88.1",
-    "react-native-gesture-handler": "~3.3.0",
-    "react-native-reanimated": "4.7.1",
-    "react-native-safe-area-context": "~5.11.1",
-    "react-native-screens": "~4.30.1",
-    "react-native-web": "~0.21.4",
-    "react-native-worklets": "0.13.0"
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@types/react": "~19.3.0",
-    "eslint": "^9.0.0",
-    "eslint-config-expo": "~58.0.4",
-    "typescript": "~6.0.3"
-  },
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "lint": "expo lint"
-  },
-  "private": true
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "tailwindcss": "4.3.3",
+    "typescript": "^5",
+    "wrangler": "^4.167.0"
+  }
 }

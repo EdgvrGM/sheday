@@ -1,15 +1,15 @@
-// Tipos que reflejan supabase/migrations/0001_init.sql.
+// Tipos que reflejan supabase/migrations/*.sql.
 // Si cambias el esquema, actualiza este archivo.
 
-export type UserRole = 'customer' | 'admin';
-export type ProductMode = 'stock' | 'preorder';
+export type UserRole = "customer" | "admin";
+export type ProductMode = "stock" | "preorder";
 export type OrderStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'ordered'
-  | 'on_the_way'
-  | 'delivered'
-  | 'cancelled';
+  | "pending"
+  | "confirmed"
+  | "ordered"
+  | "on_the_way"
+  | "delivered"
+  | "cancelled";
 
 export interface Profile {
   id: string;
@@ -101,6 +101,6 @@ export interface CartItem {
   imagePath: string | null;
   isPreorder: boolean;
   quantity: number;
-  /** Stock disponible cuando se agregó (solo informativo; el servidor valida). */
+  /** Stock disponible cuando se agregó (informativo; el servidor valida). */
   maxStock: number | null;
 }

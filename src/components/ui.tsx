@@ -1,190 +1,199 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ComponentProps, ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type ScrollViewProps,
-  type StyleProp,
-  type TextInputProps,
-  type TextProps,
-  type ViewStyle,
-} from 'react-native';
+import { AlertCircle, Loader2, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-
-export type IconName = ComponentProps<typeof Ionicons>['name'];
-
-// ---------- Texto ----------
-type Variant = 'title' | 'heading' | 'body' | 'muted' | 'small' | 'label' | 'price';
-
-export function T({ variant = 'body', style, ...props }: TextProps & { variant?: Variant }) {
-  return <Text {...props} style={[styles[variant], style]} />;
-}
-
-// ---------- Contenedores ----------
-/** Contenido desplazable, centrado y con ancho máximo (útil en web). */
-export function Screen({
-  children,
-  contentStyle,
-  ...props
-}: ScrollViewProps & { children: ReactNode; contentStyle?: StyleProp<ViewStyle> }) {
-  return (
-    <ScrollView
-      style={styles.screen}
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[styles.screenContent, contentStyle]}
-      {...props}>
-      {children}
-    </ScrollView>
-  );
-}
-
-export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.card, style]}>{children}</View>;
-}
-
-export function Row({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.row, style]}>{children}</View>;
+export function cn(...classes: (string | false | null | undefined)[]): string {
+  return classes.filter(Boolean).join(" ");
 }
 
 // ---------- Botones ----------
-type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'whatsapp';
+type ButtonKind = "primary" | "secondary" | "ghost" | "danger" | "whatsapp";
 
-export function Button({
-  title,
-  onPress,
-  kind = 'primary',
-  icon,
-  loading,
-  disabled,
-  style,
-}: {
-  title: string;
-  onPress?: () => void;
-  kind?: ButtonKind;
-  icon?: IconName;
-  loading?: boolean;
-  disabled?: boolean;
-  style?: StyleProp<ViewStyle>;
-}) {
-  const palette = BUTTON_COLORS[kind];
-  const isDisabled = disabled || loading;
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={isDisabled}
-      accessibilityRole="button"
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor: palette.bg, borderColor: palette.border },
-        pressed && { opacity: 0.8 },
-        isDisabled && { opacity: 0.5 },
-        style,
-      ]}>
-      {loading ? (
-        <ActivityIndicator color={palette.fg} />
-      ) : (
-        <>
-          {icon && <Ionicons name={icon} size={18} color={palette.fg} />}
-          <Text style={[styles.buttonText, { color: palette.fg }]}>{title}</Text>
-        </>
-      )}
-    </Pressable>
+const BUTTON_STYLES: Record<ButtonKind, string> = {
+  primary: "bg-brand text-white hover:bg-brand-dark border-brand",
+  secondary: "bg-white text-brand border-brand hover:bg-brand-soft",
+  ghost: "bg-white text-ink border-line hover:bg-surface",
+  danger: "bg-white text-red-700 border-red-300 hover:bg-red-50",
+  whatsapp: "bg-[#25D366] text-white border-[#25D366] hover:brightness-95",
+};
+
+export function buttonClass(kind: ButtonKind = "primary", extra?: string) {
+  return cn(
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-[1.5px] px-5 font-semibold transition",
+    "disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+    BUTTON_STYLES[kind],
+    extra
   );
 }
 
-const BUTTON_COLORS: Record<ButtonKind, { bg: string; fg: string; border: string }> = {
-  primary: { bg: Colors.primary, fg: Colors.white, border: Colors.primary },
-  secondary: { bg: Colors.white, fg: Colors.primary, border: Colors.primary },
-  ghost: { bg: 'transparent', fg: Colors.text, border: Colors.border },
-  danger: { bg: Colors.white, fg: Colors.danger, border: Colors.danger },
-  whatsapp: { bg: '#25D366', fg: Colors.white, border: '#25D366' },
-};
-
-export function IconButton({
-  icon,
-  onPress,
-  color = Colors.text,
-  size = 22,
-  label,
-}: {
-  icon: IconName;
-  onPress: () => void;
-  color?: string;
-  size?: number;
-  label: string;
-}) {
+export function Button({
+  kind = "primary",
+  icon: Icon,
+  loading,
+  className,
+  children,
+  disabled,
+  type = "button",
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { kind?: ButtonKind; icon?: LucideIcon; loading?: boolean }) {
   return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.6 }]}>
-      <Ionicons name={icon} size={size} color={color} />
-    </Pressable>
+    <button type={type} disabled={disabled || loading} className={buttonClass(kind, className)} {...props}>
+      {loading ? <Loader2 className="size-5 animate-spin" /> : Icon && <Icon className="size-5" />}
+      {children}
+    </button>
+  );
+}
+
+export function ButtonLink({
+  href,
+  kind = "primary",
+  icon: Icon,
+  className,
+  children,
+  external,
+}: {
+  href: string;
+  kind?: ButtonKind;
+  icon?: LucideIcon;
+  className?: string;
+  children: ReactNode;
+  external?: boolean;
+}) {
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={buttonClass(kind, className)}>
+        {Icon && <Icon className="size-5" />}
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={buttonClass(kind, className)}>
+      {Icon && <Icon className="size-5" />}
+      {children}
+    </Link>
   );
 }
 
 // ---------- Formularios ----------
-export function Field({ label, hint, ...props }: TextInputProps & { label: string; hint?: string }) {
+const inputClass =
+  "w-full rounded-lg border border-line bg-white px-3 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
+
+export function Field({
+  label,
+  hint,
+  className,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
   return (
-    <View style={styles.field}>
-      <T variant="label">{label}</T>
-      <TextInput
-        placeholderTextColor={Colors.textSecondary}
-        {...props}
-        style={[styles.input, props.multiline && styles.inputMultiline, props.style]}
-      />
-      {hint && <T variant="small">{hint}</T>}
-    </View>
+    <label className={cn("flex flex-col gap-1", className)}>
+      <span className="text-sm font-semibold">{label}</span>
+      <input className={inputClass} {...props} />
+      {hint && <span className="text-xs text-muted">{hint}</span>}
+    </label>
+  );
+}
+
+export function TextArea({
+  label,
+  hint,
+  className,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string }) {
+  return (
+    <label className={cn("flex flex-col gap-1", className)}>
+      <span className="text-sm font-semibold">{label}</span>
+      <textarea rows={3} className={cn(inputClass, "resize-y")} {...props} />
+      {hint && <span className="text-xs text-muted">{hint}</span>}
+    </label>
+  );
+}
+
+export { inputClass };
+
+// ---------- Chips ----------
+export function chipClass(selected?: boolean, disabled?: boolean) {
+  return cn(
+    "inline-flex shrink-0 items-center rounded-full border px-4 py-2 text-sm font-medium transition whitespace-nowrap",
+    selected
+      ? "border-brand bg-brand text-white"
+      : disabled
+        ? "border-line bg-surface text-muted line-through"
+        : "border-line bg-white text-ink hover:border-brand/50"
   );
 }
 
 export function Chip({
-  label,
   selected,
-  onPress,
   disabled,
+  children,
+  onClick,
 }: {
-  label: string;
   selected?: boolean;
-  onPress?: () => void;
   disabled?: boolean;
+  children: ReactNode;
+  onClick?: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityState={{ selected, disabled }}
-      style={[
-        styles.chip,
-        selected && styles.chipSelected,
-        disabled && styles.chipDisabled,
-      ]}>
-      <Text
-        style={[
-          styles.chipText,
-          selected && styles.chipTextSelected,
-          disabled && styles.chipTextDisabled,
-        ]}>
-        {label}
-      </Text>
-    </Pressable>
+    <button type="button" onClick={onClick} disabled={disabled} aria-pressed={selected} className={chipClass(selected, disabled)}>
+      {children}
+    </button>
   );
 }
 
-export function Badge({ label, color, bg }: { label: string; color: string; bg: string }) {
+// ---------- Varios ----------
+export function Badge({ children, className }: { children: ReactNode; className?: string }) {
+  return <span className={cn("inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs font-bold", className)}>{children}</span>;
+}
+
+export function Card({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn("flex flex-col gap-2 rounded-2xl border border-line bg-white p-4", className)}>{children}</div>;
+}
+
+export function Spinner({ className }: { className?: string }) {
   return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={[styles.badgeText, { color }]}>{label}</Text>
-    </View>
+    <div className={cn("flex flex-1 items-center justify-center py-20", className)}>
+      <Loader2 className="size-8 animate-spin text-brand" />
+    </div>
+  );
+}
+
+export function EmptyState({
+  icon: Icon,
+  title,
+  message,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  message?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+      <Icon className="size-14 text-line" strokeWidth={1.5} />
+      <h2 className="text-lg font-bold">{title}</h2>
+      {message && <p className="max-w-sm text-muted">{message}</p>}
+      {children && <div className="mt-2 flex w-full max-w-xs flex-col gap-2">{children}</div>}
+    </div>
+  );
+}
+
+export function ErrorBox({ message }: { message: string }) {
+  return (
+    <div role="alert" className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+      <AlertCircle className="size-5 shrink-0" />
+      {message}
+    </div>
+  );
+}
+
+export function PageTitle({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{children}</h1>
+      {sub && <p className="text-muted">{sub}</p>}
+    </div>
   );
 }
 
@@ -199,160 +208,16 @@ export function QuantityStepper({
   min?: number;
   max?: number;
 }) {
+  const btn = "flex size-9 items-center justify-center rounded-full text-lg font-semibold hover:bg-surface disabled:opacity-30";
   return (
-    <View style={styles.stepper}>
-      <IconButton icon="remove" label="Menos" size={18} onPress={() => onChange(Math.max(min, value - 1))} />
-      <Text style={styles.stepperValue}>{value}</Text>
-      <IconButton icon="add" label="Más" size={18} onPress={() => onChange(Math.min(max, value + 1))} />
-    </View>
+    <div className="inline-flex items-center rounded-full border border-line px-1">
+      <button type="button" aria-label="Menos" className={btn} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>
+        −
+      </button>
+      <span className="min-w-7 text-center font-semibold">{value}</span>
+      <button type="button" aria-label="Más" className={btn} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))}>
+        +
+      </button>
+    </div>
   );
 }
-
-// ---------- Estados ----------
-export function Loading() {
-  return (
-    <View style={styles.center}>
-      <ActivityIndicator size="large" color={Colors.primary} />
-    </View>
-  );
-}
-
-export function EmptyState({
-  icon,
-  title,
-  message,
-  action,
-}: {
-  icon: IconName;
-  title: string;
-  message?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <View style={styles.center}>
-      <Ionicons name={icon} size={56} color={Colors.border} />
-      <T variant="heading" style={{ textAlign: 'center' }}>
-        {title}
-      </T>
-      {message && (
-        <T variant="muted" style={{ textAlign: 'center' }}>
-          {message}
-        </T>
-      )}
-      {action}
-    </View>
-  );
-}
-
-export function ErrorBox({ message }: { message: string }) {
-  return (
-    <View style={styles.errorBox}>
-      <Ionicons name="alert-circle" size={18} color={Colors.danger} />
-      <Text style={styles.errorText}>{message}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  title: { fontSize: 26, fontWeight: '700', color: Colors.text },
-  heading: { fontSize: 18, fontWeight: '700', color: Colors.text },
-  body: { fontSize: 15, color: Colors.text, lineHeight: 21 },
-  muted: { fontSize: 15, color: Colors.textSecondary, lineHeight: 21 },
-  small: { fontSize: 12, color: Colors.textSecondary },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.text },
-  price: { fontSize: 16, fontWeight: '700', color: Colors.primary },
-
-  screen: { flex: 1, backgroundColor: Colors.background },
-  screenContent: {
-    padding: Spacing.lg,
-    gap: Spacing.lg,
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-  },
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-
-  button: {
-    minHeight: 48,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    paddingHorizontal: Spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-  },
-  buttonText: { fontSize: 16, fontWeight: '600' },
-  iconButton: { padding: Spacing.xs },
-
-  field: { gap: Spacing.xs },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    fontSize: 16,
-    color: Colors.text,
-    backgroundColor: Colors.white,
-  },
-  inputMultiline: { minHeight: 90, textAlignVertical: 'top' },
-
-  chip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
-  },
-  chipSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipDisabled: { backgroundColor: Colors.surface },
-  chipText: { fontSize: 14, color: Colors.text, fontWeight: '500' },
-  chipTextSelected: { color: Colors.white },
-  chipTextDisabled: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
-
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: Radius.pill,
-  },
-  badgeText: { fontSize: 12, fontWeight: '700' },
-
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.xs,
-  },
-  stepperValue: { minWidth: 28, textAlign: 'center', fontSize: 16, fontWeight: '600', color: Colors.text },
-
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.xl,
-    gap: Spacing.md,
-    backgroundColor: Colors.background,
-  },
-  errorBox: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    alignItems: 'center',
-    backgroundColor: Colors.dangerSoft,
-    padding: Spacing.md,
-    borderRadius: Radius.sm,
-  },
-  errorText: { color: Colors.danger, flex: 1, fontSize: 14 },
-});
