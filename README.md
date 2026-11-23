@@ -157,6 +157,7 @@ npm run typecheck    # TypeScript
 npm run lint         # ESLint
 npm run preview      # build + runtime de Cloudflare local (http://localhost:8787)
 npm run deploy       # build + deploy manual a Cloudflare (requiere `npx wrangler login`)
+                     # usa .env.production.local (NEXT_PUBLIC_SITE_URL=https://sheday.mx)
 ```
 
 ## Pendientes / ideas
