@@ -77,7 +77,7 @@ export default function AdminCategoriesPage() {
       <PageTitle sub="Edita un nombre y sal del campo para guardarlo.">Categorías</PageTitle>
       {error && <ErrorBox message={error} />}
       <form onSubmit={add} className="flex gap-2">
-        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nueva categoría" className={inputClass} />
+        <input value={newName} onChange={(e) => setNewName(e.target.value.slice(0, 40))} maxLength={40} placeholder="Nueva categoría" className={inputClass} />
         <Button type="submit" loading={busy} disabled={!newName.trim()}>
           Agregar
         </Button>
@@ -86,6 +86,7 @@ export default function AdminCategoriesPage() {
         <Card key={`${c.id}-${c.name}`} className="flex-row items-center gap-1 py-2">
           <input
             defaultValue={c.name}
+            maxLength={40}
             onBlur={(e) => rename(c, e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             aria-label="Nombre de la categoría"

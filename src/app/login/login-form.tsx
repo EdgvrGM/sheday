@@ -5,13 +5,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
+import { PasswordField, PhoneField } from "@/components/form-fields";
 import { Button, ErrorBox, Field, PageTitle } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
+import { emailInput, isValidEmail, isValidPhone, MAX } from "@/lib/input";
 import { getSupabase } from "@/lib/supabase/browser";
 
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
   const { session } = useAuth();
+  const [useEmail, setUseEmail] = useState(false);
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,30 +29,77 @@ export function LoginForm({ next }: { next: string }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (useEmail ? !isValidEmail(email) : !isValidPhone(phone)) {
+      return setError(useEmail ? "Escribe un correo válido." : "Escribe tu celular a 10 dígitos.");
+    }
+    if (!password) return setError("Escribe tu contraseña.");
+
     setLoading(true);
-    const { error } = await getSupabase().auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
-    if (error) setError(errorMessage(error));
+    try {
+      // El servidor busca la cuenta por celular y valida la contraseña
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: useEmail ? email : phone, password }),
+      });
+      const body = (await res.json()) as { error?: string; access_token?: string; refresh_token?: string };
+      if (!res.ok || !body.access_token || !body.refresh_token) {
+        setError(body.error ?? "No pudimos iniciar sesión.");
+        return;
+      }
+      const { error } = await getSupabase().auth.setSession({
+        access_token: body.access_token,
+        refresh_token: body.refresh_token,
+      });
+      if (error) setError(errorMessage(error));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   const nextQuery = next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
 
   return (
-    <form onSubmit={submit} className="mx-auto flex w-full max-w-md flex-col gap-4 py-4">
-      <PageTitle sub="Inicia sesión para hacer tu pedido.">Hola de nuevo 👋</PageTitle>
+    <form onSubmit={submit} noValidate className="mx-auto flex w-full max-w-md flex-col gap-4 py-4">
+      <PageTitle sub="Inicia sesión con tu celular para hacer tu pedido.">Hola de nuevo 👋</PageTitle>
       {error && <ErrorBox message={error} />}
-      <Field label="Correo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
-      <Field
+      {useEmail ? (
+        <Field
+          label="Correo"
+          type="email"
+          inputMode="email"
+          value={email}
+          onChange={(e) => setEmail(emailInput(e.target.value))}
+          autoComplete="username"
+          maxLength={MAX.email}
+          required
+        />
+      ) : (
+        <PhoneField label="Celular" value={phone} onChange={setPhone} autoComplete="username" hint="" required />
+      )}
+      <PasswordField
         label="Contraseña"
-        type="password"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={setPassword}
         autoComplete="current-password"
         required
       />
-      <Link href="/recuperar" className="-mt-2 self-end text-sm text-brand">
-        ¿Olvidaste tu contraseña?
-      </Link>
+      <div className="-mt-2 flex justify-between text-sm">
+        <button
+          type="button"
+          onClick={() => {
+            setUseEmail(!useEmail);
+            setError(null);
+          }}
+          className="text-muted underline-offset-2 hover:underline">
+          {useEmail ? "Entrar con celular" : "Entrar con correo"}
+        </button>
+        <Link href="/recuperar" className="text-brand">
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </div>
       <Button type="submit" loading={loading}>
         Iniciar sesión
       </Button>

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/toast";
 import { Button, Card, Chip, ErrorBox, Field, inputClass, PageTitle, Spinner, TextArea, cn } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
+import { digitsInput, MAX, priceInput, textInput } from "@/lib/input";
 import { deleteProductImages, imageUrl, uploadProductImage } from "@/lib/images";
 import { fetchCategories, fetchProduct } from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
@@ -224,7 +225,7 @@ export default function AdminProductPage() {
   }
 
   return (
-    <form onSubmit={save} className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+    <form onSubmit={save} noValidate className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <Link href="/admin" className="flex items-center gap-1 text-sm text-muted">
         <ArrowLeft className="size-4" /> Administración
       </Link>
@@ -288,16 +289,17 @@ export default function AdminProductPage() {
       {/* Datos */}
       <section className="flex flex-col gap-4">
         <h2 className="font-bold">Datos</h2>
-        <Field label="Nombre" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vestido midi floral" required />
+        <Field label="Nombre" value={name} onChange={(e) => setName(textInput(e.target.value, MAX.productName))} maxLength={MAX.productName} placeholder="Vestido midi floral" required />
         <Field
           label="Precio de venta (MXN)"
           inputMode="decimal"
           value={price}
-          onChange={(e) => setPrice(e.target.value)}
+          onChange={(e) => setPrice(priceInput(e.target.value))}
+          hint="Solo números, por ejemplo 349 o 349.50"
           placeholder="349"
           required
         />
-        <TextArea label="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tela, largo, cómo queda…" />
+        <TextArea label="Descripción" value={description} onChange={(e) => setDescription(textInput(e.target.value, MAX.description))} maxLength={MAX.description} placeholder="Tela, largo, cómo queda…" />
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-semibold">Categoría</span>
@@ -328,7 +330,8 @@ export default function AdminProductPage() {
               label="Días estimados de llegada"
               inputMode="numeric"
               value={preorderDays}
-              onChange={(e) => setPreorderDays(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => setPreorderDays(digitsInput(e.target.value, 3))}
+              maxLength={3}
               placeholder="15"
             />
           )}
@@ -368,14 +371,16 @@ export default function AdminProductPage() {
           <div key={v.key} className="flex items-center gap-2">
             <input
               value={v.size}
-              onChange={(e) => updateVariant(v.key, { size: e.target.value })}
+              onChange={(e) => updateVariant(v.key, { size: textInput(e.target.value, MAX.size) })}
+              maxLength={MAX.size}
               placeholder="Talla"
               aria-label="Talla"
               className={cn(inputClass, "min-w-0 flex-1 py-2")}
             />
             <input
               value={v.color}
-              onChange={(e) => updateVariant(v.key, { color: e.target.value })}
+              onChange={(e) => updateVariant(v.key, { color: textInput(e.target.value, MAX.color) })}
+              maxLength={MAX.color}
               placeholder="Color (opcional)"
               aria-label="Color"
               className={cn(inputClass, "min-w-0 flex-[1.4] py-2")}
@@ -383,7 +388,8 @@ export default function AdminProductPage() {
             {mode === "stock" && (
               <input
                 value={v.stock}
-                onChange={(e) => updateVariant(v.key, { stock: e.target.value.replace(/\D/g, "") })}
+                onChange={(e) => updateVariant(v.key, { stock: digitsInput(e.target.value, 4) })}
+                maxLength={4}
                 inputMode="numeric"
                 placeholder="Stock"
                 aria-label="Stock"

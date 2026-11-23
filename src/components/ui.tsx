@@ -77,7 +77,7 @@ export function ButtonLink({
 
 // ---------- Formularios ----------
 const inputClass =
-  "w-full rounded-lg border border-line bg-white px-3 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
+  "w-full rounded-lg border border-line bg-white px-3 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 aria-[invalid=true]:border-red-400";
 
 export function Field({
   label,

@@ -7,6 +7,7 @@ import { OrderTimeline, OrderTotals } from "@/components/order-parts";
 import { useToast } from "@/components/toast";
 import { Button, ButtonLink, Card, EmptyState, PageTitle, Spinner } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
+import { formatPhone } from "@/lib/input";
 import { formatDate } from "@/lib/format";
 import { fetchOrder, fetchSettings } from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
@@ -76,7 +77,7 @@ export function OrderDetail({ id, isNew }: { id: number; isNew: boolean }) {
       <Card>
         <h2 className="text-sm font-semibold">Entrega</h2>
         <p>
-          {order.customer_name} · {order.customer_phone}
+          {order.customer_name} · {formatPhone(order.customer_phone)}
         </p>
         <p className="text-muted">{order.delivery_address}</p>
         {order.notes && <p className="text-muted">Notas: {order.notes}</p>}

@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { formatDate, formatMoney, ORDER_FLOW, ORDER_STATUS } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
+import { formatPhone } from "@/lib/input";
 import type { Order, OrderItem } from "@/lib/types";
 
 import { Badge, Card, cn } from "./ui";
@@ -97,7 +98,7 @@ export function OrderCard({ order, href, showCustomer }: { order: Order; href: s
         </div>
         {showCustomer && (
           <p className="text-sm">
-            {order.customer_name} · {order.customer_phone}
+            {order.customer_name} · {formatPhone(order.customer_phone)}
           </p>
         )}
         <p className="text-xs text-muted">{formatDate(order.created_at)}</p>

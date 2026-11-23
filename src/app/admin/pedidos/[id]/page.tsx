@@ -9,6 +9,7 @@ import { OrderTotals, StatusBadge } from "@/components/order-parts";
 import { useToast } from "@/components/toast";
 import { Button, ButtonLink, Card, Chip, EmptyState, PageTitle, Spinner, TextArea } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
+import { formatPhone, phoneInput } from "@/lib/input";
 import { formatDate, ORDER_STATUS } from "@/lib/format";
 import { fetchOrder } from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
@@ -80,8 +81,8 @@ export default function AdminOrderPage() {
           <span className="text-lg font-bold">{order.customer_name}</span>
           <StatusBadge status={order.status} />
         </div>
-        <a href={`tel:${order.customer_phone}`} className="text-brand">
-          {order.customer_phone}
+        <a href={`tel:+52${phoneInput(order.customer_phone)}`} className="text-brand">
+          {formatPhone(order.customer_phone)}
         </a>
         <p className="text-muted">{order.delivery_address}</p>
         {order.notes && <p className="text-muted">Notas de la clienta: {order.notes}</p>}
@@ -111,7 +112,8 @@ export default function AdminOrderPage() {
       <TextArea
         label="Notas internas (no se muestran en la página de la clienta)"
         value={notes}
-        onChange={(e) => setNotes(e.target.value)}
+        onChange={(e) => setNotes(e.target.value.slice(0, 1000))}
+        maxLength={1000}
         placeholder="Ej. anticipo recibido $200, entregar el sábado"
       />
       <Button kind="secondary" onClick={saveNotes} loading={saving}>

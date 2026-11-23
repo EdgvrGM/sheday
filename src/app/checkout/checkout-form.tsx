@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
+import { PhoneField } from "@/components/form-fields";
 import { Button, ButtonLink, Card, EmptyState, ErrorBox, Field, PageTitle, TextArea } from "@/components/ui";
 import { useCart } from "@/lib/cart";
 import { errorMessage } from "@/lib/errors";
-import { digitsOnly, formatMoney } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
+import { isValidName, isValidPhone, MAX, nameInput, phoneInput, textInput } from "@/lib/input";
 import { fetchSettings } from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
 import type { StoreSettings } from "@/lib/types";
@@ -28,7 +30,7 @@ export function CheckoutForm() {
   const [placing, setPlacing] = useState(false);
 
   const name = nameDraft ?? profile?.full_name ?? "";
-  const phone = phoneDraft ?? profile?.phone ?? "";
+  const phone = phoneDraft ?? phoneInput(profile?.phone ?? "");
   const address = addressDraft ?? profile?.address ?? "";
 
   useEffect(() => {
@@ -48,9 +50,9 @@ export function CheckoutForm() {
   async function placeOrder(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!name.trim()) return setError("Escribe tu nombre.");
-    if (digitsOnly(phone).length < 10) return setError("Escribe tu celular a 10 dígitos.");
-    if (!address.trim()) return setError("Escribe la dirección de entrega.");
+    if (!isValidName(name)) return setError("Escribe tu nombre.");
+    if (!isValidPhone(phone)) return setError("Escribe tu celular a 10 dígitos.");
+    if (address.trim().length < 5) return setError("Escribe la dirección de entrega.");
 
     setPlacing(true);
     const { data: orderId, error } = await getSupabase().rpc("place_order", {
@@ -70,24 +72,30 @@ export function CheckoutForm() {
   }
 
   return (
-    <form onSubmit={placeOrder} className="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-[1fr_340px]">
+    <form onSubmit={placeOrder} noValidate className="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-[1fr_340px]">
       <div className="flex flex-col gap-4">
         <PageTitle>Datos de entrega</PageTitle>
-        <Field label="Nombre" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required />
         <Field
-          label="Celular (WhatsApp)"
-          type="tel"
-          inputMode="tel"
+          label="Nombre"
+          value={name}
+          onChange={(e) => setName(nameInput(e.target.value))}
+          autoComplete="name"
+          autoCapitalize="words"
+          maxLength={MAX.name}
+          required
+        />
+        <PhoneField
+          label="Celular de contacto (WhatsApp)"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          autoComplete="tel"
-          placeholder="10 dígitos"
+          onChange={setPhone}
+          hint="Te escribiremos a este número para coordinar la entrega."
           required
         />
         <TextArea
           label="Dirección de entrega"
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={(e) => setAddress(textInput(e.target.value, MAX.address))}
+          maxLength={MAX.address}
           placeholder="Calle, número, colonia, referencias"
           autoComplete="street-address"
           required
@@ -95,7 +103,8 @@ export function CheckoutForm() {
         <TextArea
           label="Notas (opcional)"
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => setNotes(textInput(e.target.value, MAX.notes))}
+          maxLength={MAX.notes}
           placeholder="Horario preferido, punto de entrega…"
         />
       </div>

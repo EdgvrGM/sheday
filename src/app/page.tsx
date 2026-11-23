@@ -52,6 +52,7 @@ export default async function CatalogPage(props: PageProps<"/">) {
         <Search className="size-5 shrink-0 text-muted" />
         <input
           name="q"
+          maxLength={60}
           type="search"
           defaultValue={q}
           placeholder="Buscar vestidos, blusas…"

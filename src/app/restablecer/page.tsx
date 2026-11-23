@@ -6,7 +6,8 @@ import { useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast";
-import { Button, ButtonLink, EmptyState, ErrorBox, Field, PageTitle, Spinner } from "@/components/ui";
+import { PasswordField } from "@/components/form-fields";
+import { Button, ButtonLink, EmptyState, ErrorBox, PageTitle, Spinner } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { getSupabase } from "@/lib/supabase/browser";
 
@@ -43,11 +44,26 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <form onSubmit={submit} className="mx-auto flex w-full max-w-md flex-col gap-4 py-4">
+    <form onSubmit={submit} noValidate className="mx-auto flex w-full max-w-md flex-col gap-4 py-4">
       <PageTitle>Nueva contraseña</PageTitle>
       {error && <ErrorBox message={error} />}
-      <Field label="Contraseña nueva" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
-      <Field label="Repite la contraseña" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />
+      <PasswordField
+        label="Contraseña nueva"
+        value={password}
+        onChange={setPassword}
+        autoComplete="new-password"
+        hint="Mínimo 6 caracteres"
+        minLength={6}
+        required
+      />
+      <PasswordField
+        label="Repite la contraseña"
+        value={confirm}
+        onChange={setConfirm}
+        autoComplete="new-password"
+        error={confirm.length > 0 && confirm !== password ? "Las contraseñas no coinciden" : null}
+        required
+      />
       <Button type="submit" loading={loading}>
         Guardar
       </Button>

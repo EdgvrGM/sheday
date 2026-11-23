@@ -16,7 +16,7 @@ Tienda en línea para la reventa local de ropa (principalmente de mujer). Las cl
 | Capa | Tecnología |
 |---|---|
 | Web | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, `lucide-react` |
-| Backend | Supabase: Postgres, Auth (correo y contraseña), Storage (fotos), RLS |
+| Backend | Supabase: Postgres, Auth (inicio de sesión con celular + contraseña; correo verificado para recuperación), Storage (fotos), RLS |
 | Hosting | Cloudflare Workers (plan gratis) con el adaptador `@opennextjs/cloudflare` |
 
 
@@ -25,7 +25,7 @@ Tienda en línea para la reventa local de ropa (principalmente de mujer). Las cl
 ### Flujo de la clienta
 1. Ve el catálogo **sin registrarse**, con búsqueda y filtros: Entrega inmediata, Sobre pedido y categoría.
 2. En el producto elige talla, color y cantidad. Puede **Comprar** (va directo al carrito), **Agregar al carrito** o **Preguntar por WhatsApp**.
-3. Para confirmar, inicia sesión o se registra. Puede recuperar su contraseña por correo.
+3. Para confirmar, inicia sesión con su **celular y contraseña**. Si es nueva, se registra con celular, correo y contraseña, y confirma su correo con el enlace que le llega. Cada celular solo puede tener una cuenta. Si olvida la contraseña, la recupera sola por correo.
 4. Confirma: el servidor valida precios y existencias y descuenta el stock.
 5. Ve "¡Pedido recibido!" y un botón de WhatsApp con el resumen del pedido ya escrito.
 6. En **Pedidos** sigue el estado. Puede **cancelar** mientras el pedido siga *Pendiente*.
