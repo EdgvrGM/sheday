@@ -10,6 +10,7 @@ import { useCart } from "@/lib/cart";
 
 import { useAuth } from "./auth-provider";
 import { CatalogMenu } from "./catalog-menu";
+import { ThemeMenu } from "./theme-switch";
 import { cn } from "./ui";
 
 function useNavItems() {
@@ -32,7 +33,7 @@ function CartBadge() {
   const { count } = useCart();
   if (count === 0) return null;
   return (
-    <span className="absolute -top-1.5 -right-2 flex min-w-5 items-center justify-center rounded-full bg-brand px-1 text-xs font-bold text-white">
+    <span className="absolute -top-1.5 -right-2 flex min-w-5 items-center justify-center rounded-full bg-brand px-1 text-xs font-bold text-paper">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -69,7 +70,7 @@ export function SiteHeader() {
   const compact = useCompactOnScroll();
   return (
     <header
-      className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur"
+      className="glass-bar sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur"
       // Altura actual del encabezado en celular: la usa el menú de catálogo
       style={{ "--header-h": compact ? "57px" : "65px" } as React.CSSProperties}>
       <div
@@ -83,17 +84,22 @@ export function SiteHeader() {
           href="/"
           aria-label="Sheday, inicio"
           className="absolute left-1/2 flex -translate-x-1/2 items-center rounded-md md:static md:translate-x-0">
-          <Image
-            src="/brand/sheday-horizontal.svg"
-            alt="Sheday"
-            width={200}
-            height={52}
-            priority
-            className={cn(
-              "w-auto transition-[height] duration-200 ease-out",
-              compact ? "h-9 md:h-10" : "h-12 md:h-[52px]"
-            )}
-          />
+          {/* Una versión por tema: en oscuro el nombre va en blanco hueso (la etiqueta rosa no cambia) */}
+          {(["light", "dark"] as const).map((t) => (
+            <Image
+              key={t}
+              src={t === "light" ? "/brand/sheday-horizontal.svg" : "/brand/sheday-horizontal-oscuro.svg"}
+              alt="Sheday"
+              width={200}
+              height={52}
+              priority
+              className={cn(
+                "w-auto transition-[height] duration-200 ease-out",
+                t === "light" ? "dark:hidden" : "hidden dark:block",
+                compact ? "h-9 md:h-10" : "h-12 md:h-[52px]"
+              )}
+            />
+          ))}
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {items.map(({ href, label, icon: Icon }) => (
@@ -111,6 +117,7 @@ export function SiteHeader() {
               {label}
             </Link>
           ))}
+          <ThemeMenu />
         </nav>
         <Link
           href="/bolsa"
@@ -131,7 +138,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const items = useNavItems();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+    <nav className="glass-bar fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
       <div className="flex">
         {items.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);

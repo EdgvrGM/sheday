@@ -34,15 +34,15 @@ export function ProductCard({ product, priority }: { product: Product; priority?
         )}
         <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
           {isNewItem && available && (
-            <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">Nuevo</span>
+            <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-paper">Nuevo</span>
           )}
           {product.mode === "preorder" && (
-            <span className="rounded-full bg-ink px-2.5 py-0.5 text-xs font-bold text-white">Sobre pedido</span>
+            <span className="rounded-full bg-ink px-2.5 py-0.5 text-xs font-bold text-paper">Sobre pedido</span>
           )}
         </div>
         {!available && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-            <span className="rounded-full bg-ink px-3 py-1 text-sm font-bold text-white">Agotado</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-paper/60">
+            <span className="rounded-full bg-ink px-3 py-1 text-sm font-bold text-paper">Agotado</span>
           </div>
         )}
       </div>

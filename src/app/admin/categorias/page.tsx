@@ -103,7 +103,7 @@ export default function AdminCategoriesPage() {
             className="p-2 disabled:opacity-25">
             <ChevronDown className="size-5" />
           </button>
-          <button type="button" aria-label="Eliminar" onClick={() => remove(c)} className="p-2 text-red-600">
+          <button type="button" aria-label="Eliminar" onClick={() => remove(c)} className="p-2 text-danger">
             <Trash2 className="size-5" />
           </button>
         </Card>

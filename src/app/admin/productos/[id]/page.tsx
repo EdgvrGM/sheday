@@ -241,7 +241,7 @@ export default function AdminProductPage() {
               {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:) */}
               <img src={img.preview} alt="" className="h-full w-full object-cover" />
               {idx === 0 && (
-                <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-brand px-2 text-xs font-bold text-white">
+                <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-brand px-2 text-xs font-bold text-paper">
                   <Star className="size-3" /> Portada
                 </span>
               )}
@@ -396,7 +396,7 @@ export default function AdminProductPage() {
                 className={cn(inputClass, "w-20 py-2")}
               />
             )}
-            <button type="button" aria-label="Quitar variante" onClick={() => removeVariant(v)} className="p-2 text-red-600">
+            <button type="button" aria-label="Quitar variante" onClick={() => removeVariant(v)} className="p-2 text-danger">
               <Trash2 className="size-5" />
             </button>
           </div>

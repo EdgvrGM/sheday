@@ -107,7 +107,7 @@ export function ProductPurchase({
       )}
 
       {variant && !isPreorder && (
-        <p className={variant.stock > 0 && variant.stock <= 2 ? "text-sm font-semibold text-amber-700" : "text-sm text-muted"}>
+        <p className={variant.stock > 0 && variant.stock <= 2 ? "text-sm font-semibold text-warning" : "text-sm text-muted"}>
           {variant.stock === 0
             ? "Agotado en esta opción"
             : variant.stock <= 2

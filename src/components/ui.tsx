@@ -11,10 +11,10 @@ type ButtonKind = "primary" | "secondary" | "ghost" | "danger" | "whatsapp";
 
 const BUTTON_STYLES: Record<ButtonKind, string> = {
   // Ciruela como color principal; el rosa queda solo como detalle de marca
-  primary: "bg-ink text-white hover:bg-ink/85 border-ink",
-  secondary: "bg-white text-ink border-ink hover:bg-surface",
-  ghost: "bg-white text-ink border-line hover:bg-surface",
-  danger: "bg-white text-red-700 border-red-300 hover:bg-red-50",
+  primary: "bg-ink text-paper hover:bg-ink/85 border-ink",
+  secondary: "bg-raised text-ink border-ink hover:bg-surface",
+  ghost: "bg-raised text-ink border-line hover:bg-surface",
+  danger: "bg-raised text-danger border-danger-line hover:bg-danger-soft",
   whatsapp: "bg-[#25D366] text-white border-[#25D366] hover:brightness-95",
 };
 
@@ -78,7 +78,7 @@ export function ButtonLink({
 
 // ---------- Formularios ----------
 const inputClass =
-  "w-full rounded-xl border border-line bg-white px-3.5 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 aria-[invalid=true]:border-red-400";
+  "w-full rounded-xl border border-line bg-raised px-3.5 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 aria-[invalid=true]:border-danger-line";
 
 /** id estable para ligar el mensaje de ayuda/error a su campo. */
 export function fieldId(label: string) {
@@ -94,7 +94,7 @@ export function fieldId(label: string) {
 export function FieldNote({ id, hint, error }: { id: string; hint?: string; error?: string | null }) {
   if (error) {
     return (
-      <span id={id} className="text-sm font-medium text-red-700">
+      <span id={id} className="text-sm font-medium text-danger">
         {error}
       </span>
     );
@@ -164,11 +164,11 @@ export function chipClass(selected?: boolean, disabled?: boolean, variant: "soli
     "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition whitespace-nowrap",
     selected
       ? variant === "solid"
-        ? "border-ink bg-ink text-white"
-        : "border-ink bg-white font-semibold text-ink"
+        ? "border-ink bg-ink text-paper"
+        : "border-ink bg-raised font-semibold text-ink"
       : disabled
         ? "border-line bg-surface text-muted line-through"
-        : "border-line bg-white text-ink hover:border-ink/40"
+        : "border-line bg-raised text-ink hover:border-ink/40"
   );
 }
 
@@ -196,7 +196,7 @@ export function Badge({ children, className }: { children: ReactNode; className?
 }
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("flex flex-col gap-2 rounded-xl border border-line bg-white p-4", className)}>{children}</div>;
+  return <div className={cn("flex flex-col gap-2 rounded-xl border border-line bg-raised p-4", className)}>{children}</div>;
 }
 
 export function Spinner({ className }: { className?: string }) {
@@ -230,7 +230,7 @@ export function EmptyState({
 
 export function ErrorBox({ message }: { message: string }) {
   return (
-    <div role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+    <div role="alert" className="flex items-center gap-2 rounded-xl bg-danger-soft p-3 text-sm text-danger">
       <AlertCircle className="size-5 shrink-0" />
       {message}
     </div>

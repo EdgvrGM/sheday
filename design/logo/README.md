@@ -33,6 +33,7 @@ Fuentes usadas (todas con licencia SIL Open Font License): Bodoni Moda, Fraunces
 - Rosa mexicano `#C4006A` (logo sobre blanco) y `#E4007C` (fondos)
 - Ciruela `#2B1226` (versión oscura)
 - Blanco `#FFFFFF` (sobre rosa o ciruela)
+- Blanco hueso `#F3E7EE`: nombre en `sheday-horizontal-oscuro.svg`, para el modo oscuro de la web
 
 ## Uso correcto
 - Deja alrededor del logo un espacio libre de al menos la altura de la "S".

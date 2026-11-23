@@ -48,11 +48,11 @@ export default function AdminPage() {
 
       <div className="grid grid-cols-2 gap-3 md:max-w-md">
         <Card>
-          <span className="text-3xl font-bold text-amber-600">{pending}</span>
+          <span className="text-3xl font-bold text-warning">{pending}</span>
           <span className="text-xs text-muted">Pedidos pendientes</span>
         </Card>
         <Card>
-          <span className="text-3xl font-bold text-red-600">{lowStock}</span>
+          <span className="text-3xl font-bold text-danger">{lowStock}</span>
           <span className="text-xs text-muted">Productos con poco stock</span>
         </Card>
       </div>
@@ -131,9 +131,9 @@ function AdminProductRow({ product }: { product: Product }) {
           <div className="flex flex-wrap gap-1">
             {!product.is_active && <Badge className="bg-surface text-muted">Oculto</Badge>}
             {product.mode === "preorder" ? (
-              <Badge className="bg-ink text-white">Sobre pedido</Badge>
+              <Badge className="bg-ink text-paper">Sobre pedido</Badge>
             ) : (
-              <Badge className={stock <= 2 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}>{stock} en stock</Badge>
+              <Badge className={stock <= 2 ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}>{stock} en stock</Badge>
             )}
           </div>
         </div>

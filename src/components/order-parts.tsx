@@ -67,7 +67,7 @@ export function OrderTotals({ order }: { order: Order }) {
 
 export function OrderTimeline({ order }: { order: Order }) {
   if (order.status === "cancelled") {
-    return <Card className="border-red-100 bg-red-50 font-semibold text-red-700">Este pedido fue cancelado.</Card>;
+    return <Card className="border-danger/15 bg-danger-soft font-semibold text-danger">Este pedido fue cancelado.</Card>;
   }
   const hasPreorder = order.order_items.some((i) => i.is_preorder);
   const steps = ORDER_FLOW.filter((s) => s !== "ordered" || hasPreorder);

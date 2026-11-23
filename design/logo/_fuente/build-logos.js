@@ -22,7 +22,8 @@ const ITALIC = "italic";
 const ROMAN = "roman";
 const UPM = FONTS.italic[600].unitsPerEm;
 
-const C = { brand: "#C4006A", bright: "#E4007C", ink: "#2B1226", white: "#FFFFFF" };
+const C = { brand: "#C4006A", bright: "#E4007C", ink: "#2B1226", white: "#FFFFFF", bone: "#F3E7EE" };
+// bone: blanco hueso rosado del modo oscuro de la web (--color-ink en oscuro)
 
 const { opticalKerning } = require("./optical");
 
@@ -348,6 +349,8 @@ ${tagSD(512, { tag: tagColor, mono: monoColor })}
   save("8-etiqueta-sd/sheday-horizontal.svg", horizontal(C.ink, C.brand, C.white));
   save("8-etiqueta-sd/sheday-horizontal-rosa.svg", horizontal(C.brand, C.brand, C.white));
   save("8-etiqueta-sd/sheday-horizontal-sobre-rosa.svg", horizontal(C.white, C.white, C.bright, C.bright));
+  // Modo oscuro de la web: nombre en blanco hueso; la etiqueta rosa no cambia
+  save("8-etiqueta-sd/sheday-horizontal-oscuro.svg", horizontal(C.bone, C.brand, C.white));
 
   // Vertical: etiqueta arriba, nombre abajo
   const vertical = (wordColor, tagColor, monoColor, bg) => {

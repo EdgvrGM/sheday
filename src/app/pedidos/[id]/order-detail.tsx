@@ -53,8 +53,8 @@ export function OrderDetail({ id, isNew }: { id: number; isNew: boolean }) {
       <PageTitle sub={`Realizado el ${formatDate(order.created_at)}`}>Pedido #{order.id}</PageTitle>
 
       {isNew && (
-        <Card className="items-center border-green-100 bg-green-50 text-center">
-          <CheckCircle2 className="size-12 text-green-600" />
+        <Card className="items-center border-success/15 bg-success-soft text-center">
+          <CheckCircle2 className="size-12 text-success" />
           <h2 className="text-lg font-bold">¡Pedido recibido!</h2>
           <p>Envíanos tu pedido por WhatsApp para confirmarlo y acordar la entrega.</p>
         </Card>

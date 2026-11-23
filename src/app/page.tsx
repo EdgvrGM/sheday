@@ -67,14 +67,14 @@ export default async function CatalogPage(props: PageProps<"/">) {
       {latest && !hasFilters && (
         <section
           aria-labelledby="llegada"
-          className="-mx-4 -mt-4 flex flex-col items-start gap-4 bg-surface px-4 pt-7 pb-6 md:mx-0 md:mt-0 md:flex-row md:items-end md:justify-between md:rounded-xl md:px-10 md:py-10">
+          className="signature-glow -mx-4 -mt-4 flex flex-col items-start gap-4 bg-surface px-4 pt-7 pb-6 md:mx-0 md:mt-0 md:flex-row md:items-end md:justify-between md:rounded-xl md:px-10 md:py-10">
           <div className="flex flex-col gap-2">
             <h1 id="llegada" className="font-display text-4xl leading-[1.05] font-semibold text-balance md:text-6xl">
               {arrivalLabel(latest.created_at)}
             </h1>
             {/* El único rosa de la banda: la misma etiqueta "Nuevo" que llevan las tarjetas */}
             <p className="flex items-center gap-2 text-base font-medium text-muted">
-              <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">Nuevo</span>
+              <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-paper">Nuevo</span>
               {fresh.length === 1 ? "1 pieza esta semana" : `${fresh.length} piezas esta semana`}
             </p>
           </div>

@@ -87,9 +87,9 @@ export default async function ProductPage(props: PageProps<"/producto/[slug]">) 
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           {isPreorder ? (
-            <Badge className="bg-ink text-white">Sobre pedido</Badge>
+            <Badge className="bg-ink text-paper">Sobre pedido</Badge>
           ) : (
-            <Badge className="bg-green-50 text-green-700">Entrega inmediata</Badge>
+            <Badge className="bg-success-soft text-success">Entrega inmediata</Badge>
           )}
           <h1 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">{product.name}</h1>
           <p className="text-2xl font-semibold">{formatMoney(product.price)}</p>

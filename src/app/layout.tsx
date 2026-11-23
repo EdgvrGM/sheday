@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { BottomNav, SiteHeader } from "@/components/site-nav";
 import { ToastProvider } from "@/components/toast";
 import { SITE_URL } from "@/lib/env";
+import { THEME_COLORS, THEME_SCRIPT } from "@/lib/theme-script";
 
 import "./globals.css";
 
@@ -24,8 +25,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Barra del navegador en Android: blanca (el rosa en superficies grandes cansa la vista)
-  themeColor: "#ffffff",
+  // Barra del navegador: del color del fondo en cada tema (el rosa en superficies grandes cansa la vista).
+  // Si la clienta elige un tema a mano, THEME_SCRIPT ajusta estas etiquetas.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -33,7 +38,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es-MX" className={`${jakarta.variable} ${bodoni.variable} antialiased`}>
+    // suppressHydrationWarning: THEME_SCRIPT pone data-theme en <html> antes de que React hidrate
+    <html lang="es-MX" className={`${jakarta.variable} ${bodoni.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-dvh flex-col font-sans">
         <AuthProvider>
           <ToastProvider>

@@ -33,12 +33,12 @@ export function arrivalLabel(iso: string, now = new Date()): string {
 
 /** Etiqueta y clases de Tailwind para cada estado de pedido. */
 export const ORDER_STATUS: Record<OrderStatus, { label: string; className: string }> = {
-  pending: { label: "Pendiente", className: "bg-amber-50 text-amber-700" },
-  confirmed: { label: "Confirmado", className: "bg-blue-50 text-blue-700" },
-  ordered: { label: "Pedido al proveedor", className: "bg-blue-50 text-blue-700" },
+  pending: { label: "Pendiente", className: "bg-warning-soft text-warning" },
+  confirmed: { label: "Confirmado", className: "bg-info-soft text-info" },
+  ordered: { label: "Pedido al proveedor", className: "bg-info-soft text-info" },
   on_the_way: { label: "En camino", className: "bg-brand-soft text-brand" },
-  delivered: { label: "Entregado", className: "bg-green-50 text-green-700" },
-  cancelled: { label: "Cancelado", className: "bg-red-50 text-red-700" },
+  delivered: { label: "Entregado", className: "bg-success-soft text-success" },
+  cancelled: { label: "Cancelado", className: "bg-danger-soft text-danger" },
 };
 
 /** Orden en que avanza un pedido (para la línea de tiempo). */

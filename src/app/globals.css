@@ -2,12 +2,17 @@
 
 /*
  * Sistema visual de Sheday
- * - Un solo acento: rosa mexicano. `brand` para acciones, `brand-bright`
- *   solo para superficies grandes (la banda de "lo que llegó").
- * - Texto ciruela y grises con tinte rosado (una sola familia de grises).
+ * - Ciruela (`ink`) es el color principal; el rosa (`brand`) es solo detalle.
+ * - Grises con tinte rosado (una sola familia de grises).
  * - Formas: acciones/chips/etiquetas = píldora; fotos/tarjetas/campos = 12px
  *   (rounded-xl); miniaturas = 8px (rounded-lg).
  * - Bodoni Moda (font-display) solo para la marca y títulos de 24px o más.
+ *
+ * Tokens semánticos: los componentes nunca usan `white` ni la paleta de
+ * Tailwind directamente, para que el modo oscuro cambie solo con las variables.
+ *   paper    fondo de la página            raised   tarjetas, campos y botones
+ *   surface  zonas suaves, hover, banda    overlay  menús y avisos flotantes
+ *   ink      texto y relleno principal     paper    texto sobre `ink` o `brand`
  */
 @theme {
   --color-brand: #c4006a;
@@ -16,19 +21,85 @@
   --color-brand-soft: #ffe3f1;
   --color-ink: #2b1226;
   --color-muted: #6b5763;
+  --color-paper: #ffffff;
+  --color-raised: #ffffff;
   --color-surface: #f8f2f5;
+  --color-overlay: #ffffff;
   --color-line: #ebdde4;
+  --color-scrim: rgb(43 18 38 / 0.3);
+
+  /* Estados (mismos valores que la paleta de Tailwind que se usaba antes) */
+  --color-danger: oklch(50.5% 0.213 27.518);
+  --color-danger-soft: oklch(97.1% 0.013 17.38);
+  --color-danger-line: oklch(70.4% 0.191 22.216);
+  --color-success: oklch(52.7% 0.154 150.069);
+  --color-success-soft: oklch(98.2% 0.018 155.826);
+  --color-warning: oklch(55.5% 0.163 48.998);
+  --color-warning-soft: oklch(98.7% 0.022 95.277);
+  --color-info: oklch(48.8% 0.243 264.376);
+  --color-info-soft: oklch(97% 0.014 254.604);
+
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
 }
+
+/*
+ * Modo oscuro: "ciruela de noche".
+ * - Fondo casi negro con tinte ciruela (nunca #000) y elevación por luminosidad:
+ *   paper < raised < surface < overlay.
+ * - Texto blanco hueso rosado (no #fff); el gris secundario conserva 7:1.
+ * - Rosa desaturado ~18 % y más claro para leerse sobre oscuro (7.6:1); sigue
+ *   siendo solo detalle. El botón principal se invierte: claro con texto ciruela.
+ * - Los colores de estado se aclaran y sus fondos pasan a tintes oscuros.
+ * El atributo lo pone el script de `layout.tsx` antes de pintar (sin parpadeo).
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-brand: #f27bb8;
+  --color-brand-dark: #f59acb;
+  --color-brand-soft: #3a1631;
+  --color-ink: #f3e7ee;
+  --color-muted: #b9a4b1;
+  --color-paper: #150b13;
+  --color-raised: #1d1119;
+  --color-surface: #261721;
+  --color-overlay: #2d1d29;
+  --color-line: #3d2a38;
+  --color-scrim: rgb(5 2 4 / 0.6);
+
+  --color-danger: #ff8a96;
+  --color-danger-soft: #2e1218;
+  --color-danger-line: #c2475a;
+  --color-success: #6fd49b;
+  --color-success-soft: #0f2419;
+  --color-warning: #f2c069;
+  --color-warning-soft: #2a1f0e;
+  --color-info: #93b6ff;
+  --color-info-soft: #131d33;
+}
+
+/* `dark:` sigue el tema elegido (automático, claro u oscuro), no solo el del sistema. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 html {
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: #ffffff;
+  background: var(--color-paper);
   color: var(--color-ink);
+}
+
+/* Atmósfera: un resplandor ciruela muy tenue arriba, detrás del vidrio del encabezado. */
+[data-theme="dark"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 26rem at 50% -10rem, rgb(132 46 108 / 0.28), transparent 70%),
+    radial-gradient(40rem 30rem at 100% 110%, rgb(90 30 74 / 0.18), transparent 70%);
 }
 
 ::selection {
@@ -37,7 +108,7 @@ body {
 }
 
 /* Foco visible y consistente para teclado en todos los controles. */
-:where(a, button, [role="switch"], summary, input[type="checkbox"]):focus-visible {
+:where(a, button, [role="switch"], [role="radio"], summary, input[type="checkbox"]):focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
@@ -47,6 +118,91 @@ input,
 select,
 textarea {
   font-size: 16px;
+}
+
+/* El autocompletado del navegador no debe pintar los campos de amarillo/azul en oscuro. */
+[data-theme="dark"] input:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-ink);
+  box-shadow: 0 0 0 1000px var(--color-raised) inset;
+  caret-color: var(--color-ink);
+}
+
+/* ---------- Vidrio (solo en modo oscuro; en claro se queda como estaba) ---------- */
+
+/* Barras fijas (encabezado y barra inferior): vidrio ahumado con filo de luz tenue. */
+[data-theme="dark"] .glass-bar {
+  background-color: color-mix(in oklab, var(--color-paper) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-color: rgb(255 255 255 / 0.07);
+}
+
+/*
+ * Paneles flotantes: más elevados, con filo de luz y brillo interior arriba.
+ * - `.glass-panel` (avisos): vidrio translúcido.
+ * - `.panel-lift` (catálogo y menú de apariencia): igual pero sólido. Viven dentro del
+ *   encabezado, que ya tiene backdrop-filter, y el navegador no desenfoca capas anidadas:
+ *   translúcidos dejarían ver el contenido de atrás sin desenfocar.
+ */
+[data-theme="dark"] :is(.glass-panel, .panel-lift) {
+  border-color: rgb(255 255 255 / 0.08);
+  box-shadow:
+    0 20px 48px rgb(0 0 0 / 0.45),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+[data-theme="dark"] .glass-panel {
+  background-color: color-mix(in oklab, var(--color-overlay) 86%, transparent);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+/* Sin backdrop-filter: relleno sólido para que el texto siga legible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-theme="dark"] .glass-bar {
+    background-color: var(--color-paper);
+  }
+  [data-theme="dark"] .glass-panel {
+    background-color: var(--color-overlay);
+  }
+}
+
+/*
+ * Momento firma (banda "Llegó…") en oscuro: un velo ciruela suave detrás del título
+ * y un filo degradado de 1 px (máscara) con un susurro de rosa. No es un fondo rosa.
+ */
+[data-theme="dark"] .signature-glow {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgb(132 46 108 / 0.32), transparent 60%),
+    var(--color-surface);
+}
+[data-theme="dark"] .signature-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 0.16) 0%,
+    color-mix(in oklab, var(--color-brand) 40%, transparent) 40%,
+    rgb(255 255 255 / 0.04) 72%,
+    rgb(255 255 255 / 0.1) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Cambio de tema: fundido corto con View Transitions (se omite con "reducir movimiento"). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.25s;
 }
 
 /* Oculta la barra de scroll en carruseles horizontales. */

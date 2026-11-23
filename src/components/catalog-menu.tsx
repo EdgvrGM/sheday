@@ -8,6 +8,7 @@ import { fetchCategories } from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
 import type { Category } from "@/lib/types";
 
+import { ThemeSwitch } from "./theme-switch";
 import { cn } from "./ui";
 
 // Las categorías se piden una sola vez, al abrir el menú por primera vez.
@@ -83,13 +84,13 @@ export function CatalogMenu() {
       {open && (
         <>
           {/* Fondo: tocar fuera cierra */}
-          <div aria-hidden className="fixed inset-0 top-[var(--header-h)] z-30 bg-ink/30 md:hidden" onClick={() => close()} />
+          <div aria-hidden className="fixed inset-0 top-[var(--header-h)] z-30 bg-scrim md:hidden" onClick={() => close()} />
           <div
             ref={panel}
             id={panelId}
             role="dialog"
             aria-label="Catálogo"
-            className="absolute inset-x-0 top-full z-40 max-h-[calc(100dvh-var(--header-h)-4rem)] overflow-y-auto border-b border-line bg-white shadow-lg md:hidden">
+            className="absolute inset-x-0 top-full z-40 max-h-[calc(100dvh-var(--header-h)-4rem)] overflow-y-auto border-b border-line bg-overlay shadow-lg panel-lift md:hidden">
             <nav aria-label="Catálogo" className="mx-auto flex max-w-6xl flex-col px-4 pt-2 pb-5">
               <ul>
                 {QUICK_LINKS.map((l) => (
@@ -119,6 +120,8 @@ export function CatalogMenu() {
                   ))}
                 </ul>
               )}
+
+              <ThemeSwitch className="mt-6" />
             </nav>
           </div>
         </>
