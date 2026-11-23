@@ -39,7 +39,6 @@ Tienda en línea para la reventa local de ropa (principalmente de mujer). Las cl
 ---
 
 ## Pendientes / ideas
-- Logo y paleta definitivos. El ícono actual es una "S" provisional generada en `src/lib/brand-mark.tsx`.
 - Notificaciones (por ejemplo, avisos por WhatsApp o web push).
 - Reportes de ventas en el admin.
 - Al ocultar o borrar un producto, avisar si está en pedidos activos.

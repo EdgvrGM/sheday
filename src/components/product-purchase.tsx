@@ -59,8 +59,8 @@ export function ProductPurchase({
       quantity: Math.min(qty, Math.max(1, maxQty)),
       maxStock: isPreorder ? null : variant.stock,
     });
-    if (goToCart) router.push("/carrito");
-    else toast("Agregado al carrito");
+    if (goToCart) router.push("/bolsa");
+    else toast("Agregado a tu bolsa");
   }
 
   return (
@@ -128,7 +128,7 @@ export function ProductPurchase({
           {!variant ? (colors.length > 1 ? "Elige talla y color" : "Elige tu talla") : canAdd ? "Comprar" : "Agotado"}
         </Button>
         <Button kind="secondary" disabled={!canAdd} onClick={() => add(false)} className="flex-1">
-          Agregar al carrito
+          Agregar a la bolsa
         </Button>
       </div>
 

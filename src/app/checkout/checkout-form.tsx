@@ -40,7 +40,7 @@ export function CheckoutForm() {
 
   if (cart.items.length === 0 && !placing) {
     return (
-      <EmptyState icon={ShoppingBag} title="Tu carrito está vacío">
+      <EmptyState icon={ShoppingBag} title="Tu bolsa está vacía">
         <ButtonLink href="/">Ver la tienda</ButtonLink>
       </EmptyState>
     );

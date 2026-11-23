@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".open-next/**",
     ".wrangler/**",
     "cloudflare-env.d.ts",
+    // Generador de logos (scripts de Node, no son parte de la web)
+    "design/**",
   ]),
 ]);
 

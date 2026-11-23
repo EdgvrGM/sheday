@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   // desde Supabase Storage. Así evitamos el servicio de imágenes de
   // Cloudflare, que es de pago.
   images: { unoptimized: true },
+  // La "bolsa" antes se llamaba "carrito": los enlaces viejos siguen funcionando
+  async redirects() {
+    return [{ source: "/carrito", destination: "/bolsa", permanent: true }];
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -10,8 +10,9 @@ export function cn(...classes: (string | false | null | undefined)[]): string {
 type ButtonKind = "primary" | "secondary" | "ghost" | "danger" | "whatsapp";
 
 const BUTTON_STYLES: Record<ButtonKind, string> = {
-  primary: "bg-brand text-white hover:bg-brand-dark border-brand",
-  secondary: "bg-white text-brand border-brand hover:bg-brand-soft",
+  // Ciruela como color principal; el rosa queda solo como detalle de marca
+  primary: "bg-ink text-white hover:bg-ink/85 border-ink",
+  secondary: "bg-white text-ink border-ink hover:bg-surface",
   ghost: "bg-white text-ink border-line hover:bg-surface",
   danger: "bg-white text-red-700 border-red-300 hover:bg-red-50",
   whatsapp: "bg-[#25D366] text-white border-[#25D366] hover:brightness-95",
@@ -154,8 +155,8 @@ export { inputClass };
 
 // ---------- Chips ----------
 /**
- * `solid`: filtro o elección principal (seleccionado en rosa).
- * `subtle`: filtro secundario, como las categorías (seleccionado en ciruela con borde),
+ * `solid`: filtro o elección principal (seleccionado relleno en ciruela).
+ * `subtle`: filtro secundario, como las categorías (seleccionado solo con borde ciruela),
  * para que no compita con el principal.
  */
 export function chipClass(selected?: boolean, disabled?: boolean, variant: "solid" | "subtle" = "solid") {
@@ -163,11 +164,11 @@ export function chipClass(selected?: boolean, disabled?: boolean, variant: "soli
     "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition whitespace-nowrap",
     selected
       ? variant === "solid"
-        ? "border-brand bg-brand text-white"
+        ? "border-ink bg-ink text-white"
         : "border-ink bg-white font-semibold text-ink"
       : disabled
         ? "border-line bg-surface text-muted line-through"
-        : "border-line bg-white text-ink hover:border-brand/50"
+        : "border-line bg-white text-ink hover:border-ink/40"
   );
 }
 

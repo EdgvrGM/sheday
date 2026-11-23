@@ -1,19 +1,22 @@
 "use client";
 
 import { Briefcase, Receipt, ShoppingBag, Store, User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { useCart } from "@/lib/cart";
 
 import { useAuth } from "./auth-provider";
+import { CatalogMenu } from "./catalog-menu";
 import { cn } from "./ui";
 
 function useNavItems() {
   const { isAdmin } = useAuth();
   const items = [
     { href: "/", label: "Tienda", icon: Store },
-    { href: "/carrito", label: "Carrito", icon: ShoppingBag },
+    { href: "/bolsa", label: "Bolsa", icon: ShoppingBag },
     { href: "/pedidos", label: "Pedidos", icon: Receipt },
     { href: "/cuenta", label: "Cuenta", icon: User },
   ];
@@ -35,15 +38,62 @@ function CartBadge() {
   );
 }
 
-/** Encabezado: logo y, en pantallas medianas o grandes, la navegación completa. */
+/** true cuando la página bajó; con histéresis para que no parpadee en el límite. */
+function useCompactOnScroll() {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setCompact((prev) => (prev ? y > 8 : y > 48));
+    };
+    // Estado inicial (por si la página abre ya desplazada, p. ej. al regresar)
+    const raf = requestAnimationFrame(onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+  return compact;
+}
+
+/**
+ * Encabezado.
+ * - Celular: logo centrado (convención de tiendas de moda), catálogo desplegable a la izquierda, bolsa a la derecha.
+ * - Escritorio: logo a la izquierda y navegación completa.
+ * - Se compacta al hacer scroll para dejar más espacio a las fotos.
+ */
 export function SiteHeader() {
   const pathname = usePathname();
   const items = useNavItems();
+  const compact = useCompactOnScroll();
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" aria-label="Sheday, inicio" className="font-display text-[1.9rem] leading-none font-semibold italic text-brand">
-          Sheday
+    <header
+      className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur"
+      // Altura actual del encabezado en celular: la usa el menú de catálogo
+      style={{ "--header-h": compact ? "57px" : "65px" } as React.CSSProperties}>
+      <div
+        className={cn(
+          "relative mx-auto flex max-w-6xl items-center justify-between px-2 transition-[height] duration-200 ease-out md:px-4",
+          compact ? "h-14 md:h-16" : "h-16 md:h-20"
+        )}>
+        <CatalogMenu />
+        {/* Logo: etiqueta S+D + SHEDAY (design/logo/8-etiqueta-sd). Proporción 721×187 */}
+        <Link
+          href="/"
+          aria-label="Sheday, inicio"
+          className="absolute left-1/2 flex -translate-x-1/2 items-center rounded-md md:static md:translate-x-0">
+          <Image
+            src="/brand/sheday-horizontal.svg"
+            alt="Sheday"
+            width={200}
+            height={52}
+            priority
+            className={cn(
+              "w-auto transition-[height] duration-200 ease-out",
+              compact ? "h-9 md:h-10" : "h-12 md:h-[52px]"
+            )}
+          />
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {items.map(({ href, label, icon: Icon }) => (
@@ -56,15 +106,20 @@ export function SiteHeader() {
               )}>
               <span className="relative">
                 <Icon className="size-5" />
-                {href === "/carrito" && <CartBadge />}
+                {href === "/bolsa" && <CartBadge />}
               </span>
               {label}
             </Link>
           ))}
         </nav>
-        <Link href="/carrito" aria-label="Carrito" className="relative p-2 md:hidden">
-          <ShoppingBag className="size-6" />
-          <CartBadge />
+        <Link
+          href="/bolsa"
+          aria-label="Tu bolsa"
+          className="relative flex size-11 items-center justify-center rounded-full text-ink hover:bg-surface md:hidden">
+          <span className="relative">
+            <ShoppingBag className="size-6" />
+            <CartBadge />
+          </span>
         </Link>
       </div>
     </header>
@@ -87,7 +142,7 @@ export function BottomNav() {
               className={cn("flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium", active ? "text-brand" : "text-muted")}>
               <span className="relative">
                 <Icon className="size-6" strokeWidth={active ? 2.4 : 1.8} />
-                {href === "/carrito" && <CartBadge />}
+                {href === "/bolsa" && <CartBadge />}
               </span>
               {label}
             </Link>

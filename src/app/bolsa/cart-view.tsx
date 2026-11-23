@@ -15,7 +15,7 @@ export function CartView() {
 
   if (cart.items.length === 0) {
     return (
-      <EmptyState icon={ShoppingBag} title="Tu carrito está vacío" message="Explora la tienda y agrega lo que te guste.">
+      <EmptyState icon={ShoppingBag} title="Tu bolsa está vacía" message="Explora la tienda y agrega lo que te guste.">
         <ButtonLink href="/">Ver la tienda</ButtonLink>
       </EmptyState>
     );
@@ -24,7 +24,7 @@ export function CartView() {
   return (
     <div className="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-3">
-        <PageTitle>Carrito</PageTitle>
+        <PageTitle>Tu bolsa</PageTitle>
         {cart.items.map((item) => (
           <Card key={item.variantId} className="flex-row gap-3">
             <Link href={productHref(item.productId, item.name)}>
@@ -37,7 +37,7 @@ export function CartView() {
                 </Link>
                 <button
                   type="button"
-                  aria-label="Quitar del carrito"
+                  aria-label="Quitar de la bolsa"
                   onClick={() => cart.remove(item.variantId)}
                   className="-m-2.5 flex size-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-red-700">
                   <Trash2 className="size-5" />

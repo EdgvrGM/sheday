@@ -2,7 +2,7 @@ import { Search, Shirt } from "lucide-react";
 import Link from "next/link";
 
 import { ProductCard } from "@/components/product-card";
-import { chipClass, EmptyState, ErrorBox } from "@/components/ui";
+import { buttonClass, chipClass, EmptyState, ErrorBox } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { arrivalLabel } from "@/lib/format";
 import { fetchCategories, fetchProducts, isAvailable, isNew } from "@/lib/queries";
@@ -67,24 +67,24 @@ export default async function CatalogPage(props: PageProps<"/">) {
       {latest && !hasFilters && (
         <section
           aria-labelledby="llegada"
-          className="-mx-4 -mt-4 flex flex-col items-start gap-4 bg-brand-bright px-4 pt-7 pb-6 text-white md:mx-0 md:mt-0 md:flex-row md:items-end md:justify-between md:rounded-xl md:px-10 md:py-10">
+          className="-mx-4 -mt-4 flex flex-col items-start gap-4 bg-surface px-4 pt-7 pb-6 md:mx-0 md:mt-0 md:flex-row md:items-end md:justify-between md:rounded-xl md:px-10 md:py-10">
           <div className="flex flex-col gap-2">
             <h1 id="llegada" className="font-display text-4xl leading-[1.05] font-semibold text-balance md:text-6xl">
               {arrivalLabel(latest.created_at)}
             </h1>
-            <p className="text-base font-medium">
-              {fresh.length === 1 ? "1 pieza nueva esta semana" : `${fresh.length} piezas nuevas esta semana`}
+            {/* El único rosa de la banda: la misma etiqueta "Nuevo" que llevan las tarjetas */}
+            <p className="flex items-center gap-2 text-base font-medium text-muted">
+              <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">Nuevo</span>
+              {fresh.length === 1 ? "1 pieza esta semana" : `${fresh.length} piezas esta semana`}
             </p>
           </div>
-          <Link
-            href={buildHref({ nuevo: true })}
-            className="inline-flex min-h-12 items-center rounded-full bg-white px-6 font-semibold text-brand-dark transition active:scale-[0.97]">
+          <Link href={buildHref({ nuevo: true })} className={buttonClass("primary")}>
             Ver lo nuevo
           </Link>
         </section>
       )}
 
-      <form action="/" role="search" className="flex items-center gap-2 rounded-full bg-surface px-4">
+      <form id="buscar" action="/" role="search" className="flex scroll-mt-24 items-center gap-2 rounded-full bg-surface px-4">
         <Search className="size-5 shrink-0 text-muted" aria-hidden />
         <input
           name="q"

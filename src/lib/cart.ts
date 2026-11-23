@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 
 import type { CartItem } from "./types";
 
-// Carrito guardado en localStorage, compartido entre pestañas.
+// Bolsa de compras (en el código: "cart"), guardada en localStorage y compartida entre pestañas.
 
 const STORAGE_KEY = "sheday.cart.v1";
 const EMPTY: CartItem[] = [];
@@ -75,7 +75,7 @@ export const cartActions = {
   },
 };
 
-/** Estado del carrito. En el servidor (y antes de hidratar) siempre está vacío. */
+/** Estado de la bolsa. En el servidor (y antes de hidratar) siempre está vacío. */
 export function useCart() {
   const items = useSyncExternalStore(subscribe, read, () => EMPTY);
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
