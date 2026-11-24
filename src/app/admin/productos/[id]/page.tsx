@@ -393,7 +393,8 @@ export default function AdminProductPage() {
                 inputMode="numeric"
                 placeholder="Stock"
                 aria-label="Stock"
-                className={cn(inputClass, "w-20 py-2")}
+                // Base fija de flex: `inputClass` trae w-full y le ganaba a w-20 (dejaba en cero talla y color)
+                className={cn(inputClass, "flex-[0_0_5.5rem] py-2")}
               />
             )}
             <button type="button" aria-label="Quitar variante" onClick={() => removeVariant(v)} className="p-2 text-danger">

@@ -2,6 +2,7 @@
 
 import { ChevronRight, Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { fetchCategories } from "@/lib/queries";
@@ -23,7 +24,11 @@ const QUICK_LINKS = [
 
 /** Botón ☰ del encabezado (celular) que despliega el catálogo bajo el encabezado. */
 export function CatalogMenu() {
-  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  // Se guarda la página donde se abrió: al cambiar de página queda cerrado solo
+  // (si no, el bloqueo de scroll del fondo seguía activo en la página nueva).
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === pathname;
   const [categories, setCategories] = useState<Category[] | null>(cached);
   const [error, setError] = useState(false);
   const panelId = useId();
@@ -32,7 +37,7 @@ export function CatalogMenu() {
 
   function toggle() {
     const next = !open;
-    setOpen(next);
+    setOpenAt(next ? pathname : null);
     if (next && !cached) {
       fetchCategories(getSupabase())
         .then((c) => {
@@ -45,7 +50,7 @@ export function CatalogMenu() {
   }
 
   function close(returnFocus = false) {
-    setOpen(false);
+    setOpenAt(null);
     if (returnFocus) trigger.current?.focus();
   }
 
@@ -54,16 +59,24 @@ export function CatalogMenu() {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setOpen(false);
+        setOpenAt(null);
         trigger.current?.focus();
       }
     };
     document.addEventListener("keydown", onKey);
+    // En escritorio el panel se oculta (md:hidden): al ensanchar la ventana se cierra,
+    // para no dejar la página sin scroll detrás de un menú invisible
+    const desktop = window.matchMedia("(min-width: 48rem)");
+    const onDesktop = () => {
+      if (desktop.matches) setOpenAt(null);
+    };
+    desktop.addEventListener("change", onDesktop);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     panel.current?.querySelector<HTMLElement>("a")?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
+      desktop.removeEventListener("change", onDesktop);
       document.body.style.overflow = prevOverflow;
     };
   }, [open]);
