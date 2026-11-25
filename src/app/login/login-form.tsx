@@ -7,13 +7,15 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useCaptcha } from "@/components/captcha";
 import { PasswordField, PhoneField } from "@/components/form-fields";
+import { KeepNextLink } from "@/components/keep-next-link";
 import { OtpForm } from "@/components/otp-form";
 import { Button, ErrorBox, Field, PageTitle } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { authPhone, emailInput, isValidEmail, isValidPhone, MAX } from "@/lib/input";
+import { nextFromLocation } from "@/lib/safe-next";
 import { getSupabase } from "@/lib/supabase/browser";
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm() {
   const router = useRouter();
   const { session } = useAuth();
   const captcha = useCaptcha();
@@ -28,8 +30,8 @@ export function LoginForm({ next }: { next: string }) {
 
   // Si ya hay sesión (o se acaba de iniciar), continuar
   useEffect(() => {
-    if (session) router.replace(next);
-  }, [session, next, router]);
+    if (session) router.replace(nextFromLocation());
+  }, [session, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -81,8 +83,6 @@ export function LoginForm({ next }: { next: string }) {
       return errorMessage(e);
     }
   }
-
-  const nextQuery = next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
 
   if (step === "code") {
     return (
@@ -139,9 +139,9 @@ export function LoginForm({ next }: { next: string }) {
       </Button>
       <p className="text-center text-sm">
         ¿No tienes cuenta?{" "}
-        <Link href={`/registro${nextQuery}`} className="font-semibold text-brand">
+        <KeepNextLink href="/registro" className="font-semibold text-brand">
           Regístrate
-        </Link>
+        </KeepNextLink>
       </p>
     </form>
   );

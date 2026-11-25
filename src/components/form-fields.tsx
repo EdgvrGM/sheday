@@ -1,11 +1,11 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
-import { useLayoutEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { useId, useLayoutEffect, useRef, useState, type InputHTMLAttributes } from "react";
 
 import { groupPhone, MAX, phoneInput } from "@/lib/input";
 
-import { cn, FieldNote, fieldId, inputClass } from "./ui";
+import { cn, FieldNote, inputClass } from "./ui";
 
 type BaseProps = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> & {
   label: string;
@@ -15,19 +15,31 @@ type BaseProps = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange
   onChange: (value: string) => void;
 };
 
-function Wrapper({ label, hint, error, children }: { label: string; hint?: string; error?: string | null; children: React.ReactNode }) {
+function Wrapper({
+  label,
+  noteId,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  noteId: string;
+  hint?: string;
+  error?: string | null;
+  children: React.ReactNode;
+}) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-sm font-semibold">{label}</span>
       {children}
-      <FieldNote id={`${fieldId(label)}-note`} hint={hint} error={error} />
+      <FieldNote id={noteId} hint={hint} error={error} />
     </label>
   );
 }
 
 /** Props para ligar el input con su ayuda/error. */
-function noteProps(label: string, hint?: string, error?: string | null) {
-  return error || hint ? { "aria-describedby": `${fieldId(label)}-note` } : {};
+function noteProps(noteId: string, hint?: string, error?: string | null) {
+  return error || hint ? { "aria-describedby": noteId } : {};
 }
 
 /**
@@ -36,6 +48,7 @@ function noteProps(label: string, hint?: string, error?: string | null) {
  */
 export function PhoneField({ label, hint, error, value, onChange, className, ...props }: BaseProps) {
   const incomplete = value.length > 0 && value.length < 10;
+  const noteId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   // Cuántos dígitos deben quedar antes del cursor tras re-formatear
   const pendingCaret = useRef<number | null>(null);
@@ -72,7 +85,7 @@ export function PhoneField({ label, hint, error, value, onChange, className, ...
   }
 
   return (
-    <Wrapper label={label} hint={hint ?? "10 dígitos"} error={error}>
+    <Wrapper label={label} noteId={noteId} hint={hint ?? "10 dígitos"} error={error}>
       <div className="relative">
         <span
           aria-hidden
@@ -91,7 +104,7 @@ export function PhoneField({ label, hint, error, value, onChange, className, ...
           value={groupPhone(value)}
           onChange={handleChange}
           aria-invalid={incomplete || !!error}
-          {...noteProps(label, hint ?? "10 dígitos", error)}
+          {...noteProps(noteId, hint ?? "10 dígitos", error)}
           className={cn(inputClass, "pl-16 tracking-wide", className)}
           {...props}
         />
@@ -103,8 +116,9 @@ export function PhoneField({ label, hint, error, value, onChange, className, ...
 /** Contraseña con botón para mostrarla u ocultarla. */
 export function PasswordField({ label, hint, error, value, onChange, className, ...props }: BaseProps) {
   const [visible, setVisible] = useState(false);
+  const noteId = useId();
   return (
-    <Wrapper label={label} hint={hint} error={error}>
+    <Wrapper label={label} noteId={noteId} hint={hint} error={error}>
       <div className="relative">
         <input
           type={visible ? "text" : "password"}
@@ -116,7 +130,7 @@ export function PasswordField({ label, hint, error, value, onChange, className, 
           onChange={(e) => onChange(e.target.value.slice(0, MAX.password))}
           className={cn(inputClass, "pr-12", className)}
           aria-invalid={error ? true : undefined}
-          {...noteProps(label, hint, error)}
+          {...noteProps(noteId, hint, error)}
           {...props}
         />
         <button

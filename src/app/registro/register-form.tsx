@@ -1,22 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { useCaptcha } from "@/components/captcha";
 import { PasswordField, PhoneField } from "@/components/form-fields";
+import { KeepNextLink } from "@/components/keep-next-link";
 import { OtpForm } from "@/components/otp-form";
 import { useToast } from "@/components/toast";
 import { Button, ErrorBox, Field, PageTitle, TextArea } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { authPhone, emailInput, isValidEmail, isValidName, isValidPhone, MAX, nameInput, textInput } from "@/lib/input";
+import { nextFromLocation } from "@/lib/safe-next";
 import { getSupabase } from "@/lib/supabase/browser";
 
 const DUPLICATE_PHONE = "Ese celular ya tiene una cuenta. Inicia sesión o recupera tu contraseña.";
 
-export function RegisterForm({ next }: { next: string }) {
+export function RegisterForm() {
   const router = useRouter();
   const toast = useToast();
   const { session } = useAuth();
@@ -35,8 +36,8 @@ export function RegisterForm({ next }: { next: string }) {
   const [finishing, setFinishing] = useState(false);
 
   useEffect(() => {
-    if (session && !finishing) router.replace(next);
-  }, [session, finishing, next, router]);
+    if (session && !finishing) router.replace(nextFromLocation());
+  }, [session, finishing, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -110,8 +111,6 @@ export function RegisterForm({ next }: { next: string }) {
       return errorMessage(err);
     }
   }
-
-  const nextQuery = next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
 
   if (step === "code") {
     return (
@@ -200,9 +199,9 @@ export function RegisterForm({ next }: { next: string }) {
       </Button>
       <p className="text-center text-sm">
         ¿Ya tienes cuenta?{" "}
-        <Link href={`/login${nextQuery}`} className="font-semibold text-brand">
+        <KeepNextLink href="/login" className="font-semibold text-brand">
           Inicia sesión
-        </Link>
+        </KeepNextLink>
       </p>
     </form>
   );

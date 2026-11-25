@@ -12,8 +12,7 @@ Marca cada casilla al terminar. Última revisión: 24 nov 2026.
 
 | Pieza | Estado |
 |---|---|
-| Migraciones 0001 a 0005 | ✅ Aplicadas |
-| Migración 0006 (guardar producto en una transacción) | ⏳ **Pendiente: ejecútala antes del próximo push** |
+| Migraciones 0001 a 0006 | ✅ Aplicadas |
 | Login nuevo (celular + código por WhatsApp) | ⚠️ Desplegado, pero **no funciona** hasta terminar §2 (la tienda aún no es pública) |
 | Turnstile (anti-bots) | 💤 Listo en el código, apagado |
 | Dominio `sheday.mx` | 💤 Sin comprar |
@@ -29,7 +28,7 @@ Se ejecutan a mano en Supabase → **SQL Editor**, en orden. Copia el archivo co
 - [x] `0003_phone_login.sql`: celular único por cuenta.
 - [x] `0004_phone_auth.sql`: el celular pasa a ser el usuario de Supabase Auth.
 - [x] `0005_image_thumbs.sql`: columna `thumb_path` (miniaturas de 480 px).
-- [ ] **`0006_admin_save_product.sql`**: RPC `admin_save_product`. **Antes del próximo push:** sin ella, guardar un producto en el admin falla.
+- [x] `0006_admin_save_product.sql`: RPC `admin_save_product` (guardar producto en una transacción).
 - [ ] `0007` (todavía no existe): endurecimiento de seguridad. Se escribe y se ejecuta **después** de terminar §2.
 
 Para comprobar qué está aplicado:
@@ -110,7 +109,6 @@ Evita que un bot pida miles de códigos por WhatsApp (cada uno se cobra). El có
 ## 5. Antes de abrir la tienda al público
 
 - [ ] Sección 2 completa y probada.
-- [ ] Migración 0006 aplicada.
 - [ ] Catálogo real cargado y producto de prueba ("Mono pelon") borrado.
 - [ ] **Ajustes** del admin: WhatsApp de la tienda, % de anticipo y aviso de entrega.
 - [ ] Guarda cada producto una vez en el admin para que se generen las miniaturas de sus fotos (las subidas antes de la 0005 no tienen).

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, MessageCircle, Receipt } from "lucide-react";
+import { CheckCircle2, MessageCircle, Receipt, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { OrderTimeline, OrderTotals } from "@/components/order-parts";
@@ -19,20 +19,38 @@ export function OrderDetail({ id, isNew }: { id: number; isNew: boolean }) {
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  // Error al cargar (red, servidor): distinto de "no existe o no es tuyo"
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const validId = Number.isInteger(id) && id > 0;
 
   const [version, setVersion] = useState(0);
   const load = () => setVersion((v) => v + 1);
 
   useEffect(() => {
+    if (!validId) return;
     const sb = getSupabase();
     Promise.all([fetchOrder(sb, id), fetchSettings(sb).catch(() => null)])
       .then(([o, s]) => {
         setOrder(o);
         setSettings(s);
       })
-      .catch(() => setOrder(null));
-  }, [id, version]);
+      .catch((e) => setLoadError(errorMessage(e)));
+  }, [id, validId, version]);
 
+  if (!validId) return <EmptyState icon={Receipt} title="Pedido no encontrado" />;
+  if (loadError) {
+    return (
+      <EmptyState icon={TriangleAlert} title="No pudimos cargar el pedido" message={loadError}>
+        <Button
+          onClick={() => {
+            setLoadError(null);
+            load();
+          }}>
+          Reintentar
+        </Button>
+      </EmptyState>
+    );
+  }
   if (order === undefined) return <Spinner />;
   if (!order) return <EmptyState icon={Receipt} title="Pedido no encontrado" />;
 

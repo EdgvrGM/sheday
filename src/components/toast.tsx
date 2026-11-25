@@ -33,9 +33,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             // En oscuro: panel de vidrio elevado en lugar de la píldora invertida
             className="glass-panel flex max-w-md items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm text-paper shadow-lg dark:border dark:bg-overlay dark:text-ink">
             {t.kind === "success" ? (
-              <CheckCircle2 className="size-5 shrink-0 text-green-400 dark:text-success" />
+              <CheckCircle2 className="size-5 shrink-0 text-on-ink-success dark:text-success" />
             ) : (
-              <XCircle className="size-5 shrink-0 text-red-400 dark:text-danger" />
+              <XCircle className="size-5 shrink-0 text-on-ink-danger dark:text-danger" />
             )}
             {t.message}
           </div>

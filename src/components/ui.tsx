@@ -1,6 +1,6 @@
 import { AlertCircle, Loader2, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 
 export function cn(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
@@ -80,16 +80,6 @@ export function ButtonLink({
 const inputClass =
   "w-full rounded-xl border border-line bg-raised px-3.5 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 aria-[invalid=true]:border-danger-line";
 
-/** id estable para ligar el mensaje de ayuda/error a su campo. */
-export function fieldId(label: string) {
-  return `f-${label
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")}`;
-}
-
 /** Ayuda o error debajo del campo (el error reemplaza a la ayuda). */
 export function FieldNote({ id, hint, error }: { id: string; hint?: string; error?: string | null }) {
   if (error) {
@@ -113,7 +103,8 @@ export function Field({
   className,
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string; error?: string | null }) {
-  const id = fieldId(label);
+  // useId: único aunque dos campos tengan la misma etiqueta
+  const id = useId();
   return (
     <label className={cn("flex flex-col gap-1", className)}>
       <span className="text-sm font-semibold">{label}</span>
@@ -135,7 +126,7 @@ export function TextArea({
   className,
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string; error?: string | null }) {
-  const id = fieldId(label);
+  const id = useId();
   return (
     <label className={cn("flex flex-col gap-1", className)}>
       <span className="text-sm font-semibold">{label}</span>

@@ -38,6 +38,9 @@
   --color-warning-soft: oklch(98.7% 0.022 95.277);
   --color-info: oklch(48.8% 0.243 264.376);
   --color-info-soft: oklch(97% 0.014 254.604);
+  /* Íconos de estado sobre fondo ciruela (aviso invertido en modo claro) */
+  --color-on-ink-success: #6fd49b;
+  --color-on-ink-danger: #ff8a96;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;

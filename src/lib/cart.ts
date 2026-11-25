@@ -15,11 +15,33 @@ const EMPTY: CartItem[] = [];
 const listeners = new Set<() => void>();
 let cache: CartItem[] | null = null;
 
+/** Descarta lo que no parezca una pieza válida (datos viejos, corruptos o editados a mano). */
+function isCartItem(x: unknown): x is CartItem {
+  if (!x || typeof x !== "object") return false;
+  const i = x as Record<string, unknown>;
+  const positiveInt = (n: unknown) => Number.isInteger(n) && (n as number) > 0;
+  return (
+    positiveInt(i.variantId) &&
+    positiveInt(i.productId) &&
+    positiveInt(i.quantity) &&
+    typeof i.name === "string" &&
+    typeof i.size === "string" &&
+    typeof i.color === "string" &&
+    typeof i.price === "number" &&
+    Number.isFinite(i.price) &&
+    i.price >= 0 &&
+    typeof i.isPreorder === "boolean" &&
+    (i.imagePath === null || typeof i.imagePath === "string") &&
+    (i.maxStock === null || Number.isInteger(i.maxStock))
+  );
+}
+
 function read(): CartItem[] {
   if (cache) return cache;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    cache = raw ? (JSON.parse(raw) as CartItem[]) : EMPTY;
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    cache = Array.isArray(parsed) && parsed.length > 0 ? parsed.filter(isCartItem) : EMPTY;
   } catch {
     cache = EMPTY;
   }

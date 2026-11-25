@@ -43,6 +43,15 @@ export default function AdminProductPage() {
   const router = useRouter();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
+  // Vistas previas locales (blob:) de las fotos elegidas: se liberan al quitarlas o al salir
+  const blobUrls = useRef(new Set<string>());
+  useEffect(() => {
+    const urls = blobUrls.current;
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.clear();
+    };
+  }, []);
 
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -109,14 +118,18 @@ export default function AdminProductPage() {
     if (!files) return;
     const added = Array.from(files)
       .filter((f) => f.type.startsWith("image/"))
-      .map((file) => ({ key: newKey(), file, preview: URL.createObjectURL(file) }));
+      .map((file) => {
+        const preview = URL.createObjectURL(file);
+        blobUrls.current.add(preview);
+        return { key: newKey(), file, preview };
+      });
     setImages((prev) => [...prev, ...added]);
   }
 
   function removeImage(img: ImageDraft) {
     setImages((prev) => prev.filter((i) => i.key !== img.key));
     if (img.path) setRemovedPaths((prev) => [...prev, img.path!, ...(img.thumb ? [img.thumb] : [])]);
-    if (img.file) URL.revokeObjectURL(img.preview);
+    if (blobUrls.current.delete(img.preview)) URL.revokeObjectURL(img.preview);
   }
 
   function moveImage(idx: number, dir: -1 | 1) {

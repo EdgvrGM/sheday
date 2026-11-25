@@ -1,7 +1,7 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { codeInput, formatPhone } from "@/lib/input";
 
@@ -39,6 +39,7 @@ export function OtpForm({
   const [wait, setWait] = useState(RESEND_SECONDS);
   const [notice, setNotice] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const noteId = useId();
   // Evita mandar el mismo código dos veces (auto-envío + botón)
   const lastTried = useRef<string | null>(null);
 
@@ -126,10 +127,10 @@ export function OtpForm({
             if (next.length === 6) verify(next);
           }}
           aria-invalid={fieldError ? true : undefined}
-          aria-describedby="otp-note"
+          aria-describedby={noteId}
           className={cn(inputClass, "pl-[calc(0.875rem+0.5em)] text-center font-semibold text-2xl tracking-[0.5em] tabular-nums")}
         />
-        <FieldNote id="otp-note" hint="Vence en 10 minutos." error={fieldError} />
+        <FieldNote id={noteId} hint="Vence en 10 minutos." error={fieldError} />
       </label>
       <Button type="submit" loading={loading}>
         {submitLabel}

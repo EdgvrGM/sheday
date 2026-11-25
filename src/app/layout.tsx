@@ -11,7 +11,7 @@ import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], display: "swap" });
 // Didona de revista de moda: solo para la marca y títulos grandes
-const bodoni = Bodoni_Moda({ variable: "--font-bodoni", subsets: ["latin"], display: "swap", style: ["normal", "italic"] });
+const bodoni = Bodoni_Moda({ variable: "--font-bodoni", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

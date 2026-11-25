@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, MessageCircle, Receipt } from "lucide-react";
+import { ArrowLeft, MessageCircle, Receipt, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,16 +23,35 @@ export default function AdminOrderPage() {
   // null = sin editar (se muestra lo guardado)
   const [notesDraft, setNotes] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Error al cargar (red, servidor): distinto de "no existe"
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const orderId = Number(id);
+  const validId = Number.isInteger(orderId) && orderId > 0;
 
   const [version, setVersion] = useState(0);
   const load = () => setVersion((v) => v + 1);
 
   useEffect(() => {
-    fetchOrder(getSupabase(), Number(id))
+    if (!validId) return;
+    fetchOrder(getSupabase(), orderId)
       .then(setOrder)
-      .catch(() => setOrder(null));
-  }, [id, version]);
+      .catch((e) => setLoadError(errorMessage(e)));
+  }, [orderId, validId, version]);
 
+  if (!validId) return <EmptyState icon={Receipt} title="Pedido no encontrado" />;
+  if (loadError) {
+    return (
+      <EmptyState icon={TriangleAlert} title="No pudimos cargar el pedido" message={loadError}>
+        <Button
+          onClick={() => {
+            setLoadError(null);
+            load();
+          }}>
+          Reintentar
+        </Button>
+      </EmptyState>
+    );
+  }
   if (order === undefined) return <Spinner />;
   if (!order) return <EmptyState icon={Receipt} title="Pedido no encontrado" />;
 
