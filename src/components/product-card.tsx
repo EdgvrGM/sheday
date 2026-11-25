@@ -3,14 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { formatMoney, productHref } from "@/lib/format";
-import { imageUrl } from "@/lib/images";
-import { availableSizes, isAvailable, isNew } from "@/lib/queries";
-import type { Product } from "@/lib/types";
+import { imageUrl, thumbOrFull } from "@/lib/images";
+import { availableSizes, type CardProduct, isAvailable, isNew } from "@/lib/queries";
 
 const MAX_SIZES = 4;
 
-export function ProductCard({ product, priority }: { product: Product; priority?: boolean }) {
-  const cover = product.product_images[0]?.path;
+export function ProductCard({ product, priority }: { product: CardProduct; priority?: boolean }) {
+  // Miniatura de 480 px: la grilla no necesita la foto completa de 1200 px
+  const cover = thumbOrFull(product.product_images[0]);
   const available = isAvailable(product);
   const sizes = availableSizes(product);
   const isNewItem = isNew(product);

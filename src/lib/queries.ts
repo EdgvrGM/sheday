@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Category, Order, Product, StoreSettings } from "./types";
+import type { Category, Order, Product, ProductImage, ProductMode, ProductVariant, StoreSettings } from "./types";
 
 // Las funciones reciben el cliente: el servidor usa el público (anónimo)
 // y el navegador el que tiene la sesión de la usuaria.
@@ -19,6 +19,59 @@ export async function fetchProducts(sb: SupabaseClient, opts: { includeInactive?
   const { data, error } = await q;
   if (error) throw error;
   return (data as Product[]).map(sortChildren);
+}
+
+/** Lo que necesita una tarjeta del catálogo (sin descripción y solo la portada). */
+export type CardProduct = Pick<Product, "id" | "name" | "price" | "mode" | "category_id" | "created_at"> & {
+  product_images: ProductImage[];
+  product_variants: Pick<ProductVariant, "id" | "size" | "stock">[];
+};
+
+export interface CatalogFilters {
+  /** Busca en nombre y descripción. */
+  q?: string;
+  mode?: ProductMode;
+  categoryId?: number;
+  /** Solo productos creados desde esta fecha (ISO). */
+  since?: string;
+}
+
+/** Quita lo que rompería el filtro `or` de PostgREST o funcionaría como comodín. */
+function searchTerm(q: string | undefined): string {
+  return (q ?? "").replace(/[,()*%_\\"':]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+/**
+ * Catálogo público. Filtra en la BD y trae solo lo que pinta la tarjeta:
+ * cada visita cuesta CPU del Worker (10 ms en el plan gratis).
+ */
+export async function fetchCatalog(sb: SupabaseClient, f: CatalogFilters = {}): Promise<CardProduct[]> {
+  let q = sb
+    .from("products")
+    .select("id, name, price, mode, category_id, created_at, product_images(*), product_variants(id, size, stock)")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .order("sort_order", { referencedTable: "product_images" })
+    .order("id", { referencedTable: "product_images" })
+    .limit(1, { referencedTable: "product_images" })
+    .order("id", { referencedTable: "product_variants" });
+  if (f.mode) q = q.eq("mode", f.mode);
+  if (f.categoryId) q = q.eq("category_id", f.categoryId);
+  if (f.since) q = q.gte("created_at", f.since);
+  const term = searchTerm(f.q);
+  if (term) q = q.or(`name.ilike.*${term}*,description.ilike.*${term}*`);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data as CardProduct[];
+}
+
+/** Lo mínimo para el sitemap. */
+export async function fetchSitemapProducts(
+  sb: SupabaseClient
+): Promise<Pick<Product, "id" | "name" | "created_at">[]> {
+  const { data, error } = await sb.from("products").select("id, name, created_at").eq("is_active", true);
+  if (error) throw error;
+  return data as Pick<Product, "id" | "name" | "created_at">[];
 }
 
 export async function fetchProduct(sb: SupabaseClient, id: number): Promise<Product | null> {
@@ -56,23 +109,32 @@ export async function fetchOrder(sb: SupabaseClient, id: number): Promise<Order 
   return data as Order | null;
 }
 
-export function totalStock(p: Product): number {
+/** Lo que necesitan las funciones de disponibilidad (sirve para Product y CardProduct). */
+type StockInfo = { mode: ProductMode; product_variants: { size: string; stock: number }[] };
+
+export function totalStock(p: Pick<StockInfo, "product_variants">): number {
   return p.product_variants.reduce((sum, v) => sum + v.stock, 0);
 }
 
 /** Días que un producto se considera "Nuevo". */
 export const NEW_DAYS = 7;
+const NEW_MS = NEW_DAYS * 24 * 60 * 60 * 1000;
 
-export function isNew(p: Product, now = Date.now()): boolean {
-  return now - new Date(p.created_at).getTime() < NEW_DAYS * 24 * 60 * 60 * 1000;
+export function isNew(p: { created_at: string }, now = Date.now()): boolean {
+  return now - new Date(p.created_at).getTime() < NEW_MS;
+}
+
+/** Fecha desde la que un producto cuenta como "Nuevo" (para filtrar en la BD). */
+export function newSince(now = Date.now()): string {
+  return new Date(now - NEW_MS).toISOString();
 }
 
 /** Tallas que se pueden pedir ahora (en stock: solo las que tienen piezas). */
-export function availableSizes(p: Product): string[] {
+export function availableSizes(p: StockInfo): string[] {
   const sizes = p.product_variants.filter((v) => p.mode === "preorder" || v.stock > 0).map((v) => v.size);
   return [...new Set(sizes)];
 }
 
-export function isAvailable(p: Product): boolean {
+export function isAvailable(p: StockInfo): boolean {
   return p.mode === "preorder" ? p.product_variants.length > 0 : totalStock(p) > 0;
 }

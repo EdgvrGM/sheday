@@ -1,23 +1,25 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
+import { cache } from "react";
 
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductPurchase } from "@/components/product-purchase";
 import { Badge } from "@/components/ui";
 import { SITE_URL } from "@/lib/env";
 import { formatMoney, parseProductId, productHref, productSlug } from "@/lib/format";
-import { imageUrl } from "@/lib/images";
+import { imageUrl, thumbOrFull } from "@/lib/images";
 import { fetchProduct, fetchSettings, isAvailable } from "@/lib/queries";
 import { getPublicSupabase } from "@/lib/supabase/public";
 
 export const dynamic = "force-dynamic";
 
-async function load(slug: string) {
+// cache(): generateMetadata y la página piden el mismo producto; así es una sola consulta
+const load = cache(async (slug: string) => {
   const id = parseProductId(slug);
   if (!id) return null;
   const product = await fetchProduct(getPublicSupabase(), id);
   return product?.is_active ? product : null;
-}
+});
 
 export async function generateMetadata(props: PageProps<"/producto/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;
@@ -45,14 +47,14 @@ export async function generateMetadata(props: PageProps<"/producto/[slug]">): Pr
 
 export default async function ProductPage(props: PageProps<"/producto/[slug]">) {
   const { slug } = await props.params;
-  const product = await load(slug);
+  // Producto y ajustes en paralelo (el WhatsApp de la tienda es opcional)
+  const [product, settings] = await Promise.all([load(slug), fetchSettings(getPublicSupabase()).catch(() => null)]);
   if (!product) notFound();
 
   // Si el nombre cambió, redirige a la URL correcta (evita duplicados en Google)
   const canonical = productSlug(product.id, product.name);
   if (slug !== canonical) permanentRedirect(`/producto/${canonical}`);
 
-  const settings = await fetchSettings(getPublicSupabase()).catch(() => null);
   const isPreorder = product.mode === "preorder";
   const url = `${SITE_URL}${productHref(product.id, product.name)}`;
 
@@ -82,7 +84,10 @@ export default async function ProductPage(props: PageProps<"/producto/[slug]">) 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <ProductGallery images={product.product_images.map((i) => imageUrl(i.path)!)} alt={product.name} />
+      <ProductGallery
+        images={product.product_images.map((i) => ({ src: imageUrl(i.path)!, thumb: imageUrl(thumbOrFull(i))! }))}
+        alt={product.name}
+      />
 
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">

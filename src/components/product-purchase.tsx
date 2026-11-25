@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { cartActions } from "@/lib/cart";
+import { thumbOrFull } from "@/lib/images";
 import { productQuestionMessage, whatsappLink } from "@/lib/whatsapp";
 import type { Product } from "@/lib/types";
 
@@ -54,7 +55,7 @@ export function ProductPurchase({
       size: variant.size,
       color: variant.color,
       price: Number(product.price),
-      imagePath: product.product_images[0]?.path ?? null,
+      imagePath: thumbOrFull(product.product_images[0]),
       isPreorder,
       quantity: Math.min(qty, Math.max(1, maxQty)),
       maxStock: isPreorder ? null : variant.stock,

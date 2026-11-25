@@ -8,6 +8,7 @@ import { OrderCard, Thumb } from "@/components/order-parts";
 import { Badge, ButtonLink, Card, Chip, EmptyState, ErrorBox, PageTitle, Spinner } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { formatMoney, ORDER_STATUS } from "@/lib/format";
+import { thumbOrFull } from "@/lib/images";
 import { fetchOrders, fetchProducts, totalStock } from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
 import type { Order, OrderStatus, Product } from "@/lib/types";
@@ -124,7 +125,7 @@ function AdminProductRow({ product }: { product: Product }) {
   return (
     <Link href={`/admin/productos/${product.id}`}>
       <Card className="flex-row items-center gap-3 hover:border-brand/40">
-        <Thumb path={product.product_images[0]?.path ?? null} className="h-[70px] w-14" />
+        <Thumb path={thumbOrFull(product.product_images[0])} className="h-[70px] w-14" />
         <div className="flex flex-1 flex-col gap-1">
           <span className="line-clamp-1">{product.name}</span>
           <span className="font-semibold">{formatMoney(product.price)}</span>

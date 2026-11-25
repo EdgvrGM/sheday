@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 import { SITE_URL } from "@/lib/env";
 import { productHref } from "@/lib/format";
-import { fetchProducts } from "@/lib/queries";
+import { fetchSitemapProducts } from "@/lib/queries";
 import { getPublicSupabase } from "@/lib/supabase/public";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await fetchProducts(getPublicSupabase()).catch(() => []);
+  const products = await fetchSitemapProducts(getPublicSupabase()).catch(() => []);
   return [
     { url: `${SITE_URL}/`, changeFrequency: "daily", priority: 1 },
     ...products.map((p) => ({

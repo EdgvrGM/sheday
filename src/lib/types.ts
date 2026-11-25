@@ -36,6 +36,8 @@ export interface ProductImage {
   id: number;
   product_id: number;
   path: string;
+  /** Miniatura de 480 px (0005). null en fotos subidas antes. */
+  thumb_path?: string | null;
   sort_order: number;
 }
 

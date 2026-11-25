@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { cn } from "./ui";
 
 /** Carrusel deslizable en celular; miniaturas en escritorio. */
-export function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
+export function ProductGallery({ images, alt }: { images: { src: string; thumb: string }[]; alt: string }) {
   const [index, setIndex] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -31,7 +31,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
           ref={scroller}
           onScroll={(e) => setIndex(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
           className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto md:rounded-xl">
-          {images.map((src, i) => (
+          {images.map(({ src }, i) => (
             <div key={src} className="relative aspect-[4/5] w-full shrink-0 snap-center bg-surface">
               <Image
                 src={src}
@@ -46,7 +46,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         </div>
         {images.length > 1 && (
           <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden">
-            {images.map((src, i) => (
+            {images.map(({ src }, i) => (
               <span key={src} className={cn("h-1.5 rounded-full bg-white/70 transition-all", i === index ? "w-5 bg-white" : "w-1.5")} />
             ))}
           </div>
@@ -54,7 +54,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
       </div>
       {images.length > 1 && (
         <div className="hidden gap-2 md:flex">
-          {images.map((src, i) => (
+          {images.map(({ src, thumb }, i) => (
             <button
               key={src}
               type="button"
@@ -64,7 +64,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
                 "relative aspect-[4/5] w-16 overflow-hidden rounded-lg border-2",
                 i === index ? "border-brand" : "border-transparent"
               )}>
-              <Image src={src} alt="" fill sizes="64px" className="object-cover" />
+              <Image src={thumb} alt="" fill sizes="64px" className="object-cover" />
             </button>
           ))}
         </div>

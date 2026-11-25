@@ -5,9 +5,9 @@ import { ProductCard } from "@/components/product-card";
 import { buttonClass, chipClass, EmptyState, ErrorBox } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { arrivalLabel } from "@/lib/format";
-import { fetchCategories, fetchProducts, isAvailable, isNew } from "@/lib/queries";
+import { type CardProduct, fetchCatalog, fetchCategories, isAvailable, isNew, newSince } from "@/lib/queries";
 import { getPublicSupabase } from "@/lib/supabase/public";
-import type { Category, Product } from "@/lib/types";
+import type { Category } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -33,31 +33,38 @@ export default async function CatalogPage(props: PageProps<"/">) {
   const sp = await props.searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
   const modo = sp.modo === "stock" || sp.modo === "pedido" ? (sp.modo as Mode) : undefined;
-  const cat = typeof sp.cat === "string" ? Number(sp.cat) || undefined : undefined;
+  const catNum = typeof sp.cat === "string" ? Number(sp.cat) : NaN;
+  const cat = Number.isInteger(catNum) && catNum > 0 ? catNum : undefined;
   const nuevo = sp.nuevo === "1";
   const filters: Filters = { q, modo, cat, nuevo };
   const hasFilters = Boolean(q || modo || cat || nuevo);
 
-  let products: Product[] = [];
+  let products: CardProduct[] = [];
   let categories: Category[] = [];
   let error: string | null = null;
   try {
     const sb = getPublicSupabase();
-    [products, categories] = await Promise.all([fetchProducts(sb), fetchCategories(sb)]);
+    // Los filtros se aplican en la BD: llega solo lo que se va a mostrar
+    [products, categories] = await Promise.all([
+      fetchCatalog(sb, {
+        q,
+        mode: modo === "pedido" ? "preorder" : modo === "stock" ? "stock" : undefined,
+        categoryId: cat,
+        since: nuevo ? newSince() : undefined,
+      }),
+      fetchCategories(sb),
+    ]);
   } catch (e) {
     error = errorMessage(e);
   }
 
-  // "Lo que llegó": piezas disponibles subidas en los últimos días
-  const fresh = products.filter((p) => isNew(p) && isAvailable(p));
-  const latest = fresh[0]; // fetchProducts ya viene ordenado por fecha, más reciente primero
+  // "Lo que llegó": piezas disponibles subidas en los últimos días (la banda solo sale sin filtros,
+  // y entonces `products` es el catálogo completo, ordenado del más reciente al más viejo)
+  const fresh = hasFilters ? [] : products.filter((p) => isNew(p) && isAvailable(p));
+  const latest = fresh[0];
 
-  const needle = q.toLowerCase();
   const filtered = products
-    .filter((p) => !nuevo || (isNew(p) && isAvailable(p)))
-    .filter((p) => !modo || p.mode === (modo === "pedido" ? "preorder" : "stock"))
-    .filter((p) => !cat || p.category_id === cat)
-    .filter((p) => !needle || p.name.toLowerCase().includes(needle) || p.description.toLowerCase().includes(needle))
+    .filter((p) => !nuevo || isAvailable(p))
     .sort((a, b) => Number(isAvailable(b)) - Number(isAvailable(a)));
 
   return (

@@ -9,7 +9,7 @@ import { useToast } from "@/components/toast";
 import { Button, Card, Chip, ErrorBox, Field, inputClass, PageTitle, Spinner, TextArea, cn } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { digitsInput, MAX, priceInput, textInput } from "@/lib/input";
-import { deleteProductImages, imageUrl, uploadProductImage } from "@/lib/images";
+import { createThumbnail, deleteUnusedProductImages, imageUrl, thumbOrFull, uploadProductImage } from "@/lib/images";
 import { fetchCategories, fetchProduct } from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
 import type { Category, ProductMode } from "@/lib/types";
@@ -19,6 +19,7 @@ const QUICK_SIZES = ["XS", "S", "M", "L", "XL", "Unitalla"];
 interface ImageDraft {
   key: string;
   path?: string; // ya subida
+  thumb?: string; // su miniatura de 480 px
   file?: File; // nueva
   preview: string;
 }
@@ -76,7 +77,14 @@ export default function AdminProductPage() {
           setMode(product.mode);
           setPreorderDays(product.preorder_days ? String(product.preorder_days) : "");
           setIsActive(product.is_active);
-          setImages(product.product_images.map((i) => ({ key: newKey(), path: i.path, preview: imageUrl(i.path)! })));
+          setImages(
+            product.product_images.map((i) => ({
+              key: newKey(),
+              path: i.path,
+              thumb: i.thumb_path ?? undefined,
+              preview: imageUrl(thumbOrFull(i))!,
+            }))
+          );
           setVariants(
             product.product_variants.map((v) => ({
               key: newKey(),
@@ -110,7 +118,7 @@ export default function AdminProductPage() {
 
   function removeImage(img: ImageDraft) {
     setImages((prev) => prev.filter((i) => i.key !== img.key));
-    if (img.path) setRemovedPaths((prev) => [...prev, img.path!]);
+    if (img.path) setRemovedPaths((prev) => [...prev, img.path!, ...(img.thumb ? [img.thumb] : [])]);
     if (img.file) URL.revokeObjectURL(img.preview);
   }
 
@@ -183,26 +191,32 @@ export default function AdminProductPage() {
       }
       const pid = productId;
 
-      // Fotos: subir las nuevas (comprimidas, en paralelo) y reescribir el orden
+      // Fotos: subir las nuevas con su miniatura (en paralelo) y reescribir el orden.
+      // Las fotos viejas sin miniatura la generan aquí; si eso falla, se guarda igual.
       const uploads = await Promise.allSettled(
-        images.map(async (img) => (img.path ? img : { ...img, path: await uploadProductImage(sb, pid, img.file!) }))
+        images.map(async (img): Promise<ImageDraft> => {
+          if (!img.path) return { ...img, ...(await uploadProductImage(sb, pid, img.file!)) };
+          if (img.thumb) return img;
+          const thumb = await createThumbnail(sb, img.path).catch(() => undefined);
+          return { ...img, thumb };
+        })
       );
       const uploaded = uploads.map((r, i) => (r.status === "fulfilled" ? r.value : images[i]));
       setImages(uploaded);
       const failed = uploads.find((r) => r.status === "rejected");
       if (failed) throw failed.reason;
-      const paths = uploaded.map((img) => img.path!);
 
       const { error: delErr } = await sb.from("product_images").delete().eq("product_id", productId);
       if (delErr) throw delErr;
-      if (paths.length) {
+      if (uploaded.length) {
         const { error } = await sb
           .from("product_images")
-          .insert(paths.map((path, i) => ({ product_id: productId, path, sort_order: i })));
+          .insert(uploaded.map((img, i) => ({ product_id: productId, path: img.path!, thumb_path: img.thumb ?? null, sort_order: i })));
         if (error) throw error;
       }
       if (removedPaths.length) {
-        await deleteProductImages(sb, removedPaths).catch(() => {});
+        // Las que usa algún pedido se conservan (su miniatura en "Mis pedidos")
+        await deleteUnusedProductImages(sb, removedPaths).catch(() => {});
         setRemovedPaths([]);
       }
 
@@ -269,7 +283,7 @@ export default function AdminProductPage() {
   async function deleteProduct() {
     if (
       !window.confirm(
-        "Se borrará el producto y sus fotos. Los pedidos anteriores conservan su registro. Si solo quieres dejar de mostrarlo, mejor desactiva «Visible en la tienda». ¿Eliminar?"
+        "Se borrará el producto y sus fotos. Los pedidos anteriores conservan su registro y su foto. Si solo quieres dejar de mostrarlo, mejor desactiva «Visible en la tienda». ¿Eliminar?"
       )
     ) {
       return;
@@ -281,8 +295,9 @@ export default function AdminProductPage() {
       setSaving(false);
       return setError(errorMessage(error));
     }
-    const paths = images.flatMap((i) => (i.path ? [i.path] : [])).concat(removedPaths);
-    await deleteProductImages(sb, paths).catch(() => {});
+    // Se conservan las fotos que usa algún pedido (su miniatura en "Mis pedidos")
+    const paths = images.flatMap((i) => [i.path, i.thumb]).concat(removedPaths);
+    await deleteUnusedProductImages(sb, paths).catch(() => {});
     toast("Producto eliminado");
     router.push("/admin");
   }

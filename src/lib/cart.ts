@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { formatMoney } from "./format";
+import { thumbOrFull } from "./images";
 import { getSupabase } from "./supabase/browser";
 import type { CartItem, ProductMode } from "./types";
 
@@ -89,7 +90,7 @@ interface VariantRow {
     price: number | string;
     mode: ProductMode;
     is_active: boolean;
-    product_images: { id: number; path: string; sort_order: number }[];
+    product_images: { id: number; path: string; thumb_path?: string | null; sort_order: number }[];
   } | null;
 }
 
@@ -116,7 +117,7 @@ async function runSync(sb: SupabaseClient): Promise<string[]> {
 
   const { data, error } = await sb
     .from("product_variants")
-    .select("id, size, color, stock, products(id, name, price, mode, is_active, product_images(id, path, sort_order))")
+    .select("id, size, color, stock, products(id, name, price, mode, is_active, product_images(*))")
     .in(
       "id",
       before.map((i) => i.variantId)
@@ -164,7 +165,7 @@ async function runSync(sb: SupabaseClient): Promise<string[]> {
       price,
       isPreorder,
       maxStock,
-      imagePath: cover?.path ?? null,
+      imagePath: thumbOrFull(cover),
       quantity,
     });
   }
