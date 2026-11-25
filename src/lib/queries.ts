@@ -1,6 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Category, Order, Product, ProductImage, ProductMode, ProductVariant, StoreSettings } from "./types";
+import type {
+  Category,
+  Order,
+  OrderStatus,
+  Product,
+  ProductImage,
+  ProductMode,
+  ProductVariant,
+  StoreSettings,
+} from "./types";
 
 // Las funciones reciben el cliente: el servidor usa el público (anónimo)
 // y el navegador el que tiene la sesión de la usuaria.
@@ -11,14 +20,6 @@ function sortChildren(p: Product): Product {
   p.product_images.sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
   p.product_variants.sort((a, b) => a.id - b.id);
   return p;
-}
-
-export async function fetchProducts(sb: SupabaseClient, opts: { includeInactive?: boolean } = {}): Promise<Product[]> {
-  let q = sb.from("products").select(PRODUCT_SELECT).order("created_at", { ascending: false });
-  if (!opts.includeInactive) q = q.eq("is_active", true);
-  const { data, error } = await q;
-  if (error) throw error;
-  return (data as Product[]).map(sortChildren);
 }
 
 /** Lo que necesita una tarjeta del catálogo (sin descripción y solo la portada). */
@@ -103,6 +104,55 @@ export async function fetchOrders(sb: SupabaseClient, opts: { userId?: string } 
   return data as Order[];
 }
 
+/** Pedidos por página en el admin. */
+export const ORDERS_PAGE = 20;
+
+/**
+ * Una página de pedidos (más recientes primero), filtrada en la BD.
+ * `total` es cuántos hay con ese filtro, para "Cargar más".
+ */
+export async function fetchOrdersPage(
+  sb: SupabaseClient,
+  opts: { statuses?: OrderStatus[]; offset?: number; limit?: number } = {}
+): Promise<{ orders: Order[]; total: number }> {
+  const offset = opts.offset ?? 0;
+  const limit = opts.limit ?? ORDERS_PAGE;
+  let q = sb
+    .from("orders")
+    .select("*, order_items(*)", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (opts.statuses) q = q.in("status", opts.statuses);
+  const { data, error, count } = await q;
+  if (error) throw error;
+  return { orders: data as Order[], total: count ?? 0 };
+}
+
+/** Cuántos pedidos hay en un estado (sin traerlos). */
+export async function countOrders(sb: SupabaseClient, status: OrderStatus): Promise<number> {
+  const { count, error } = await sb.from("orders").select("id", { count: "exact", head: true }).eq("status", status);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** Lo que pinta la lista de productos del admin (sin descripción y solo la portada). */
+export type AdminProduct = Pick<Product, "id" | "name" | "price" | "mode" | "is_active" | "created_at"> & {
+  product_images: ProductImage[];
+  product_variants: Pick<ProductVariant, "stock">[];
+};
+
+export async function fetchAdminProducts(sb: SupabaseClient): Promise<AdminProduct[]> {
+  const { data, error } = await sb
+    .from("products")
+    .select("id, name, price, mode, is_active, created_at, product_images(*), product_variants(stock)")
+    .order("created_at", { ascending: false })
+    .order("sort_order", { referencedTable: "product_images" })
+    .order("id", { referencedTable: "product_images" })
+    .limit(1, { referencedTable: "product_images" });
+  if (error) throw error;
+  return data as AdminProduct[];
+}
+
 export async function fetchOrder(sb: SupabaseClient, id: number): Promise<Order | null> {
   const { data, error } = await sb.from("orders").select("*, order_items(*)").eq("id", id).maybeSingle();
   if (error) throw error;
@@ -112,7 +162,7 @@ export async function fetchOrder(sb: SupabaseClient, id: number): Promise<Order 
 /** Lo que necesitan las funciones de disponibilidad (sirve para Product y CardProduct). */
 type StockInfo = { mode: ProductMode; product_variants: { size: string; stock: number }[] };
 
-export function totalStock(p: Pick<StockInfo, "product_variants">): number {
+export function totalStock(p: { product_variants: { stock: number }[] }): number {
   return p.product_variants.reduce((sum, v) => sum + v.stock, 0);
 }
 

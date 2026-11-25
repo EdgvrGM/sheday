@@ -55,15 +55,16 @@ async function uploadBlob(supabase: SupabaseClient, path: string, blob: Blob, up
 
 /**
  * Comprime y sube una foto con su miniatura.
+ * `folder`: el id del producto, o "nuevos" si todavía no existe (se crea al guardar).
  * Regresa sus rutas en el bucket: `path` (1200 px) y `thumb` (480 px).
  */
 export async function uploadProductImage(
   supabase: SupabaseClient,
-  productId: number,
+  folder: number | string,
   file: File
 ): Promise<{ path: string; thumb: string }> {
   const [full, small] = await Promise.all([compressImage(file), compressImage(file, THUMB_SIZE, 0.78)]);
-  const base = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const base = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const path = `${base}.${extension(full)}`;
   const thumb = `${base}-${THUMB_SIZE}.${extension(small)}`;
   await Promise.all([uploadBlob(supabase, path, full), uploadBlob(supabase, thumb, small)]);

@@ -43,9 +43,6 @@ export default function AdminProductPage() {
   const router = useRouter();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
-  // Id del producto nuevo ya insertado: si el guardado falla a medias, el reintento
-  // actualiza ese producto en lugar de crear otro.
-  const createdId = useRef<number | null>(null);
 
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -165,37 +162,14 @@ export default function AdminProductPage() {
 
     setSaving(true);
     const sb = getSupabase();
-    // Lo que ya quedó guardado se anota en el borrador (ids, rutas de fotos, stock),
-    // así un reintento después de un error no duplica nada.
-    const savedVariants = new Map<string, { id: number; origStock: number }>();
+    const productId = isNew ? null : Number(id);
     try {
-      const fields = {
-        name: name.trim(),
-        description: description.trim(),
-        price: priceNum,
-        category_id: categoryId,
-        mode,
-        preorder_days: mode === "preorder" && preorderDays ? Number(preorderDays) : null,
-        is_active: isActive,
-      };
-
-      let productId = createdId.current ?? (isNew ? null : Number(id));
-      if (productId == null) {
-        const { data, error } = await sb.from("products").insert(fields).select("id").single();
-        if (error) throw error;
-        productId = data.id as number;
-        createdId.current = productId;
-      } else {
-        const { error } = await sb.from("products").update(fields).eq("id", productId);
-        if (error) throw error;
-      }
-      const pid = productId;
-
-      // Fotos: subir las nuevas con su miniatura (en paralelo) y reescribir el orden.
-      // Las fotos viejas sin miniatura la generan aquí; si eso falla, se guarda igual.
+      // 1) Fotos al bucket: las nuevas con su miniatura (en paralelo). Las viejas sin
+      //    miniatura la generan aquí; si eso falla, se guarda igual. Lo subido queda
+      //    anotado en el borrador: si después falla el guardado, el reintento no resube.
       const uploads = await Promise.allSettled(
         images.map(async (img): Promise<ImageDraft> => {
-          if (!img.path) return { ...img, ...(await uploadProductImage(sb, pid, img.file!)) };
+          if (!img.path) return { ...img, ...(await uploadProductImage(sb, productId ?? "nuevos", img.file!)) };
           if (img.thumb) return img;
           const thumb = await createThumbnail(sb, img.path).catch(() => undefined);
           return { ...img, thumb };
@@ -206,78 +180,51 @@ export default function AdminProductPage() {
       const failed = uploads.find((r) => r.status === "rejected");
       if (failed) throw failed.reason;
 
-      const { error: delErr } = await sb.from("product_images").delete().eq("product_id", productId);
-      if (delErr) throw delErr;
-      if (uploaded.length) {
-        const { error } = await sb
-          .from("product_images")
-          .insert(uploaded.map((img, i) => ({ product_id: productId, path: img.path!, thumb_path: img.thumb ?? null, sort_order: i })));
-        if (error) throw error;
-      }
-      if (removedPaths.length) {
-        // Las que usa algún pedido se conservan (su miniatura en "Mis pedidos")
-        await deleteUnusedProductImages(sb, removedPaths).catch(() => {});
-        setRemovedPaths([]);
-      }
-
-      // Variantes
-      if (removedVariantIds.length) {
-        const { error } = await sb.from("product_variants").delete().in("id", removedVariantIds);
-        if (error) throw error;
-        setRemovedVariantIds([]);
-      }
-      for (const v of variants) {
-        const base = { size: v.size.trim(), color: v.color.trim() };
-        const stock = mode === "stock" ? Number(v.stock || "0") : 0;
-
-        if (!v.id) {
-          const { data, error } = await sb
-            .from("product_variants")
-            .insert({ ...base, stock, product_id: productId })
-            .select("id")
-            .single();
-          if (error) throw error;
-          savedVariants.set(v.key, { id: data.id as number, origStock: stock });
-          continue;
-        }
-
-        if (stock === v.origStock) {
-          // Sin cambio de stock: no se toca (pudo haber ventas mientras se editaba)
-          const { error } = await sb.from("product_variants").update(base).eq("id", v.id);
-          if (error) throw error;
-          continue;
-        }
-
-        // Cambio de stock: solo si sigue igual que al cargar; si hubo una venta, avisar
-        const { data, error } = await sb
-          .from("product_variants")
-          .update({ ...base, stock })
-          .eq("id", v.id)
-          .eq("stock", v.origStock ?? 0)
-          .select("id");
-        if (error) throw error;
-        if (data.length === 0) {
-          const { data: current } = await sb.from("product_variants").select("stock").eq("id", v.id).maybeSingle();
-          const now = (current?.stock as number | undefined) ?? 0;
-          savedVariants.set(v.key, { id: v.id, origStock: now });
-          throw new Error(
-            `El stock de la talla "${base.size}"${base.color ? ` color "${base.color}"` : ""} cambió mientras editabas ` +
-              `(seguramente hubo una venta): ahora hay ${now}. Revisa la cantidad y guarda otra vez.`
-          );
-        }
-        savedVariants.set(v.key, { id: v.id, origStock: stock });
+      // 2) Datos, fotos y variantes en UNA transacción (0006_admin_save_product.sql):
+      //    o se guarda todo o nada. El stock de una variante existente solo se escribe
+      //    si cambió y nadie lo movió mientras se editaba (si hubo una venta, falla y avisa).
+      const { error } = await sb.rpc("admin_save_product", {
+        p_product_id: productId,
+        p_product: {
+          name: name.trim(),
+          description: description.trim(),
+          price: priceNum,
+          category_id: categoryId,
+          mode,
+          preorder_days: mode === "preorder" && preorderDays ? Number(preorderDays) : null,
+          is_active: isActive,
+        },
+        p_images: uploaded.map((img) => ({ path: img.path, thumb_path: img.thumb ?? null })),
+        p_variants: variants.map((v) => ({
+          id: v.id ?? null,
+          size: v.size.trim(),
+          color: v.color.trim(),
+          stock: mode === "stock" ? Number(v.stock || "0") : 0,
+          orig_stock: v.origStock ?? null,
+        })),
+        p_removed_variant_ids: removedVariantIds,
+      });
+      if (error) {
+        // Hubo una venta mientras se editaba: se toma el stock actual como nueva base,
+        // así el siguiente "Guardar" aplica lo que escribió (ya con el aviso a la vista)
+        if (error.message.includes("cambió mientras editabas") && productId) await refreshOrigStock(productId);
+        throw error;
       }
 
+      // 3) Ya guardado: borrar del bucket las fotos quitadas (salvo las que usa algún pedido)
+      await deleteUnusedProductImages(sb, removedPaths).catch(() => {});
       toast("Producto guardado");
       router.push("/admin");
     } catch (err) {
       setError(errorMessage(err));
       setSaving(false);
-    } finally {
-      if (savedVariants.size) {
-        setVariants((prev) => prev.map((v) => (savedVariants.has(v.key) ? { ...v, ...savedVariants.get(v.key) } : v)));
-      }
     }
+  }
+
+  async function refreshOrigStock(productId: number) {
+    const { data } = await getSupabase().from("product_variants").select("id, stock").eq("product_id", productId);
+    const current = new Map((data ?? []).map((r) => [r.id as number, r.stock as number]));
+    setVariants((prev) => prev.map((v) => (v.id && current.has(v.id) ? { ...v, origStock: current.get(v.id) } : v)));
   }
 
   async function deleteProduct() {
