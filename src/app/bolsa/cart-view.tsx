@@ -4,20 +4,25 @@ import { ArrowRight, ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "@/components/auth-provider";
+import { CartNotice } from "@/components/cart-notice";
 import { Thumb } from "@/components/order-parts";
 import { Badge, ButtonLink, Card, EmptyState, PageTitle, QuantityStepper } from "@/components/ui";
-import { useCart } from "@/lib/cart";
+import { useCart, useCartSync } from "@/lib/cart";
 import { formatMoney, productHref } from "@/lib/format";
 
 export function CartView() {
   const cart = useCart();
+  const sync = useCartSync();
   const { session } = useAuth();
 
   if (cart.items.length === 0) {
     return (
-      <EmptyState icon={ShoppingBag} title="Tu bolsa está vacía" message="Explora la tienda y agrega lo que te guste.">
-        <ButtonLink href="/">Ver la tienda</ButtonLink>
-      </EmptyState>
+      <div className="mx-auto flex w-full max-w-md flex-col">
+        <CartNotice changes={sync.changes} />
+        <EmptyState icon={ShoppingBag} title="Tu bolsa está vacía" message="Explora la tienda y agrega lo que te guste.">
+          <ButtonLink href="/">Ver la tienda</ButtonLink>
+        </EmptyState>
+      </div>
     );
   }
 
@@ -25,6 +30,7 @@ export function CartView() {
     <div className="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-3">
         <PageTitle>Tu bolsa</PageTitle>
+        <CartNotice changes={sync.changes} />
         {cart.items.map((item) => (
           <Card key={item.variantId} className="flex-row gap-3">
             <Link href={productHref(item.productId, item.name)}>

@@ -5,6 +5,8 @@ export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 export const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
 // Dominio de producción por defecto; en local, .env.local lo cambia a http://localhost:3000.
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://sheday.mx").replace(/\/$/, "");
+// Cloudflare Turnstile (anti-bots en registro, login y códigos). Vacío = desactivado.
+export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 export function assertEnv() {
   if (!SUPABASE_URL || !SUPABASE_KEY) {

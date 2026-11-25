@@ -29,6 +29,8 @@ interface VariantDraft {
   size: string;
   color: string;
   stock: string;
+  /** Stock que había en la BD al cargar (para no pisar ventas hechas mientras se edita). */
+  origStock?: number;
 }
 
 let keySeq = 0;
@@ -40,6 +42,9 @@ export default function AdminProductPage() {
   const router = useRouter();
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
+  // Id del producto nuevo ya insertado: si el guardado falla a medias, el reintento
+  // actualiza ese producto en lugar de crear otro.
+  const createdId = useRef<number | null>(null);
 
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -73,7 +78,14 @@ export default function AdminProductPage() {
           setIsActive(product.is_active);
           setImages(product.product_images.map((i) => ({ key: newKey(), path: i.path, preview: imageUrl(i.path)! })));
           setVariants(
-            product.product_variants.map((v) => ({ key: newKey(), id: v.id, size: v.size, color: v.color, stock: String(v.stock) }))
+            product.product_variants.map((v) => ({
+              key: newKey(),
+              id: v.id,
+              size: v.size,
+              color: v.color,
+              stock: String(v.stock),
+              origStock: v.stock,
+            }))
           );
         } else if (isNew) {
           setVariants([{ key: newKey(), size: "Unitalla", color: "", stock: "1" }]);
@@ -145,6 +157,9 @@ export default function AdminProductPage() {
 
     setSaving(true);
     const sb = getSupabase();
+    // Lo que ya quedó guardado se anota en el borrador (ids, rutas de fotos, stock),
+    // así un reintento después de un error no duplica nada.
+    const savedVariants = new Map<string, { id: number; origStock: number }>();
     try {
       const fields = {
         name: name.trim(),
@@ -156,22 +171,28 @@ export default function AdminProductPage() {
         is_active: isActive,
       };
 
-      let productId: number;
-      if (isNew) {
+      let productId = createdId.current ?? (isNew ? null : Number(id));
+      if (productId == null) {
         const { data, error } = await sb.from("products").insert(fields).select("id").single();
         if (error) throw error;
-        productId = data.id;
+        productId = data.id as number;
+        createdId.current = productId;
       } else {
-        productId = Number(id);
         const { error } = await sb.from("products").update(fields).eq("id", productId);
         if (error) throw error;
       }
+      const pid = productId;
 
-      // Fotos: subir las nuevas (comprimidas) y reescribir el orden
-      const paths: string[] = [];
-      for (const img of images) {
-        paths.push(img.path ?? (await uploadProductImage(sb, productId, img.file!)));
-      }
+      // Fotos: subir las nuevas (comprimidas, en paralelo) y reescribir el orden
+      const uploads = await Promise.allSettled(
+        images.map(async (img) => (img.path ? img : { ...img, path: await uploadProductImage(sb, pid, img.file!) }))
+      );
+      const uploaded = uploads.map((r, i) => (r.status === "fulfilled" ? r.value : images[i]));
+      setImages(uploaded);
+      const failed = uploads.find((r) => r.status === "rejected");
+      if (failed) throw failed.reason;
+      const paths = uploaded.map((img) => img.path!);
+
       const { error: delErr } = await sb.from("product_images").delete().eq("product_id", productId);
       if (delErr) throw delErr;
       if (paths.length) {
@@ -180,19 +201,57 @@ export default function AdminProductPage() {
           .insert(paths.map((path, i) => ({ product_id: productId, path, sort_order: i })));
         if (error) throw error;
       }
-      if (removedPaths.length) await deleteProductImages(sb, removedPaths).catch(() => {});
+      if (removedPaths.length) {
+        await deleteProductImages(sb, removedPaths).catch(() => {});
+        setRemovedPaths([]);
+      }
 
       // Variantes
       if (removedVariantIds.length) {
         const { error } = await sb.from("product_variants").delete().in("id", removedVariantIds);
         if (error) throw error;
+        setRemovedVariantIds([]);
       }
       for (const v of variants) {
-        const row = { size: v.size.trim(), color: v.color.trim(), stock: mode === "stock" ? Number(v.stock || "0") : 0 };
-        const { error } = v.id
-          ? await sb.from("product_variants").update(row).eq("id", v.id)
-          : await sb.from("product_variants").insert({ ...row, product_id: productId });
+        const base = { size: v.size.trim(), color: v.color.trim() };
+        const stock = mode === "stock" ? Number(v.stock || "0") : 0;
+
+        if (!v.id) {
+          const { data, error } = await sb
+            .from("product_variants")
+            .insert({ ...base, stock, product_id: productId })
+            .select("id")
+            .single();
+          if (error) throw error;
+          savedVariants.set(v.key, { id: data.id as number, origStock: stock });
+          continue;
+        }
+
+        if (stock === v.origStock) {
+          // Sin cambio de stock: no se toca (pudo haber ventas mientras se editaba)
+          const { error } = await sb.from("product_variants").update(base).eq("id", v.id);
+          if (error) throw error;
+          continue;
+        }
+
+        // Cambio de stock: solo si sigue igual que al cargar; si hubo una venta, avisar
+        const { data, error } = await sb
+          .from("product_variants")
+          .update({ ...base, stock })
+          .eq("id", v.id)
+          .eq("stock", v.origStock ?? 0)
+          .select("id");
         if (error) throw error;
+        if (data.length === 0) {
+          const { data: current } = await sb.from("product_variants").select("stock").eq("id", v.id).maybeSingle();
+          const now = (current?.stock as number | undefined) ?? 0;
+          savedVariants.set(v.key, { id: v.id, origStock: now });
+          throw new Error(
+            `El stock de la talla "${base.size}"${base.color ? ` color "${base.color}"` : ""} cambió mientras editabas ` +
+              `(seguramente hubo una venta): ahora hay ${now}. Revisa la cantidad y guarda otra vez.`
+          );
+        }
+        savedVariants.set(v.key, { id: v.id, origStock: stock });
       }
 
       toast("Producto guardado");
@@ -200,6 +259,10 @@ export default function AdminProductPage() {
     } catch (err) {
       setError(errorMessage(err));
       setSaving(false);
+    } finally {
+      if (savedVariants.size) {
+        setVariants((prev) => prev.map((v) => (savedVariants.has(v.key) ? { ...v, ...savedVariants.get(v.key) } : v)));
+      }
     }
   }
 

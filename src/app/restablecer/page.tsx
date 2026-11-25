@@ -11,7 +11,10 @@ import { Button, ButtonLink, EmptyState, ErrorBox, PageTitle, Spinner } from "@/
 import { errorMessage } from "@/lib/errors";
 import { getSupabase } from "@/lib/supabase/browser";
 
-/** Destino del enlace de "Recuperar contraseña" (Supabase abre una sesión temporal). */
+/**
+ * Destino de "Recuperar contraseña": llega con sesión, ya sea por el código de
+ * WhatsApp o por el enlace del correo (Supabase abre una sesión temporal).
+ */
 export default function ResetPasswordPage() {
   const { session, initializing } = useAuth();
   const router = useRouter();
@@ -24,8 +27,11 @@ export default function ResetPasswordPage() {
   if (initializing) return <Spinner />;
   if (!session) {
     return (
-      <EmptyState icon={KeyRound} title="Enlace inválido o vencido" message="Pide un enlace nuevo para restablecer tu contraseña.">
-        <ButtonLink href="/recuperar">Pedir otro enlace</ButtonLink>
+      <EmptyState
+        icon={KeyRound}
+        title="El enlace o el código ya venció"
+        message="Pide uno nuevo para crear tu contraseña.">
+        <ButtonLink href="/recuperar">Recuperar contraseña</ButtonLink>
       </EmptyState>
     );
   }

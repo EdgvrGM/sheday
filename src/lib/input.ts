@@ -98,6 +98,16 @@ export function groupPhone(digits: string): string {
   return parts.join(" ");
 }
 
+/** Celular de 10 dígitos en el formato que usa Supabase Auth: "+523312345678". */
+export function authPhone(digits: string): string {
+  return `+52${digits}`;
+}
+
+/** Código de verificación: solo dígitos, 6 como máximo. */
+export function codeInput(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 6);
+}
+
 /** Muestra un celular guardado como "+52 33 1234 5678". */
 export function formatPhone(value: string): string {
   const d = value.replace(/\D/g, "").slice(-10);

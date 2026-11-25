@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
+import { CartNotice } from "@/components/cart-notice";
 import { PhoneField } from "@/components/form-fields";
 import { Button, ButtonLink, Card, EmptyState, ErrorBox, Field, PageTitle, TextArea } from "@/components/ui";
-import { useCart } from "@/lib/cart";
+import { useCart, useCartSync } from "@/lib/cart";
 import { errorMessage } from "@/lib/errors";
 import { formatMoney } from "@/lib/format";
 import { isValidName, isValidPhone, MAX, nameInput, phoneInput, textInput } from "@/lib/input";
@@ -17,6 +18,8 @@ import type { StoreSettings } from "@/lib/types";
 
 export function CheckoutForm() {
   const cart = useCart();
+  // Precio y stock al día antes de confirmar (la bolsa guarda los del momento en que se agregó)
+  const sync = useCartSync();
   const router = useRouter();
   const { profile, refreshProfile } = useAuth();
   const [settings, setSettings] = useState<StoreSettings | null>(null);
@@ -40,9 +43,12 @@ export function CheckoutForm() {
 
   if (cart.items.length === 0 && !placing) {
     return (
-      <EmptyState icon={ShoppingBag} title="Tu bolsa está vacía">
-        <ButtonLink href="/">Ver la tienda</ButtonLink>
-      </EmptyState>
+      <div className="mx-auto flex w-full max-w-md flex-col">
+        <CartNotice changes={sync.changes} />
+        <EmptyState icon={ShoppingBag} title="Tu bolsa está vacía">
+          <ButtonLink href="/">Ver la tienda</ButtonLink>
+        </EmptyState>
+      </div>
     );
   }
 
@@ -72,7 +78,10 @@ export function CheckoutForm() {
     });
     if (error) {
       setPlacing(false);
-      return setError(errorMessage(error));
+      setError(errorMessage(error));
+      // Si fue por precio o stock, la bolsa se corrige y se muestra qué cambió
+      sync.resync();
+      return;
     }
     refreshProfile();
     router.replace(`/pedidos/${orderId}?nuevo=1`);
@@ -81,6 +90,7 @@ export function CheckoutForm() {
 
   return (
     <form onSubmit={placeOrder} noValidate className="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-[1fr_340px]">
+      <CartNotice changes={sync.changes} className="md:col-span-2" />
       <div className="flex flex-col gap-4">
         <PageTitle>Datos de entrega</PageTitle>
         <Field
@@ -156,7 +166,7 @@ export function CheckoutForm() {
           <p className="text-xs text-muted">{settings?.delivery_notes ?? "Entrega y pago en efectivo."}</p>
         </Card>
         {error && <ErrorBox message={error} />}
-        <Button type="submit" icon={CheckCircle2} loading={placing}>
+        <Button type="submit" icon={CheckCircle2} loading={placing || !sync.done}>
           Confirmar pedido
         </Button>
       </div>
