@@ -59,6 +59,14 @@ export function priceInput(value: string): string {
   return `${int || "0"}.${dec}`;
 }
 
+/** Medida en centímetros: hasta 3 enteros y 1 decimal ("105.5"). */
+export function cmInput(value: string): string {
+  const s = value.replace(/,/g, ".").replace(/[^\d.]/g, "");
+  const dot = s.indexOf(".");
+  if (dot === -1) return s.slice(0, 3);
+  return `${s.slice(0, dot).slice(0, 3) || "0"}.${s.slice(dot + 1).replace(/\./g, "").slice(0, 1)}`;
+}
+
 /** Texto libre: quita espacios al inicio y limita el largo. */
 export function textInput(value: string, max: number): string {
   return value.replace(/^\s+/, "").slice(0, max);

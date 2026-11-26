@@ -6,9 +6,11 @@ import { useState } from "react";
 
 import { cartActions } from "@/lib/cart";
 import { thumbOrFull } from "@/lib/images";
+import { parseGuide } from "@/lib/size-guides";
 import { productQuestionMessage, whatsappLink } from "@/lib/whatsapp";
 import type { Product } from "@/lib/types";
 
+import { SizeGuide } from "./size-guide";
 import { useToast } from "./toast";
 import { Button, ButtonLink, Chip, QuantityStepper } from "./ui";
 
@@ -30,6 +32,8 @@ export function ProductPurchase({
   const isPreorder = product.mode === "preorder";
   const variants = product.product_variants;
   const sizes = [...new Set(variants.map((v) => v.size))];
+  // Guía de tallas propia del producto (se escribe en su ficha del admin)
+  const guide = parseGuide(product.size_guide);
   const effectiveSize = size ?? (sizes.length === 1 ? sizes[0] : null);
   const colors = [
     ...new Set(variants.filter((v) => !effectiveSize || v.size === effectiveSize).map((v) => v.color).filter(Boolean)),
@@ -84,6 +88,7 @@ export function ProductPurchase({
               </Chip>
             ))}
           </div>
+          {guide && <SizeGuide guide={guide} selectedSize={effectiveSize} />}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { deleteUnusedProductImages } from "./images";
 import type {
   Category,
   Order,
@@ -151,6 +152,34 @@ export async function fetchAdminProducts(sb: SupabaseClient): Promise<AdminProdu
     .limit(1, { referencedTable: "product_images" });
   if (error) throw error;
   return data as AdminProduct[];
+}
+
+/** Productos que ya tienen guía de tallas (para "Copiar de…" en el admin). */
+export async function fetchProductGuides(sb: SupabaseClient): Promise<{ id: number; name: string; size_guide: unknown }[]> {
+  const { data, error } = await sb
+    .from("products")
+    .select("id, name, size_guide")
+    .not("size_guide", "is", null)
+    .order("created_at", { ascending: false });
+  // Sin la migración 0007 la columna no existe: simplemente no hay de dónde copiar
+  if (error) return [];
+  return data as { id: number; name: string; size_guide: unknown }[];
+}
+
+/** Panel de admin abierto en la pestaña de productos. */
+export const ADMIN_PRODUCTS = "/admin?seccion=productos";
+
+/**
+ * Borra un producto (sus fotos y variantes se van en cascada en la BD) y luego sus
+ * archivos del bucket, salvo los que usa algún pedido. `extraPaths` son fotos que solo
+ * conoce quien llama (p. ej. subidas a un borrador que no se guardó).
+ */
+export async function deleteProduct(sb: SupabaseClient, id: number, extraPaths: (string | null | undefined)[] = []): Promise<void> {
+  const { data: imgs } = await sb.from("product_images").select("path, thumb_path").eq("product_id", id);
+  const { error } = await sb.from("products").delete().eq("id", id);
+  if (error) throw error;
+  const saved = (imgs ?? []).flatMap((i) => [i.path as string, i.thumb_path as string | null]);
+  await deleteUnusedProductImages(sb, [...saved, ...extraPaths]).catch(() => {});
 }
 
 export async function fetchOrder(sb: SupabaseClient, id: number): Promise<Order | null> {

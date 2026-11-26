@@ -5,16 +5,35 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { draftFromGuide, type GuideDraft, guideFromDraft, SizeGuideEditor } from "@/components/size-guide-editor";
 import { useToast } from "@/components/toast";
 import { Button, Card, Chip, ErrorBox, Field, inputClass, PageTitle, Spinner, TextArea, cn } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { digitsInput, MAX, priceInput, textInput } from "@/lib/input";
 import { createThumbnail, deleteUnusedProductImages, imageUrl, thumbOrFull, uploadProductImage } from "@/lib/images";
-import { fetchCategories, fetchProduct } from "@/lib/queries";
+import { ADMIN_PRODUCTS, deleteProduct as deleteProductById, fetchCategories, fetchProduct, fetchProductGuides } from "@/lib/queries";
+import { figureFor, parseGuide, type SizeGuide, templateSizesFor } from "@/lib/size-guides";
 import { getSupabase } from "@/lib/supabase/browser";
 import type { Category, ProductMode } from "@/lib/types";
 
 const QUICK_SIZES = ["XS", "S", "M", "L", "XL", "Unitalla"];
+
+/** Botones rápidos según la categoría: si tiene plantillas de guía (pantalones: MX y CH–XG), sus tallas. */
+function quickSizesFor(category: Category | undefined): string[] {
+  return templateSizesFor(category?.name) ?? QUICK_SIZES;
+}
+
+/** Tallas únicas de las variantes, en orden (filas de la guía de tallas). */
+function uniqueSizes(variants: { size: string }[]): string[] {
+  const seen = new Set<string>();
+  return variants.flatMap((v) => {
+    const size = v.size.trim();
+    const key = size.toLowerCase();
+    if (!size || seen.has(key)) return [];
+    seen.add(key);
+    return [size];
+  });
+}
 
 interface ImageDraft {
   key: string;
@@ -69,12 +88,20 @@ export default function AdminProductPage() {
   const [removedPaths, setRemovedPaths] = useState<string[]>([]);
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [removedVariantIds, setRemovedVariantIds] = useState<number[]>([]);
+  const [guide, setGuide] = useState<GuideDraft | null>(null);
+  const [otherGuides, setOtherGuides] = useState<{ id: number; name: string; guide: SizeGuide }[]>([]);
 
   useEffect(() => {
     const sb = getSupabase();
-    Promise.all([fetchCategories(sb), isNew ? null : fetchProduct(sb, Number(id))])
-      .then(([cats, product]) => {
+    Promise.all([fetchCategories(sb), isNew ? null : fetchProduct(sb, Number(id)), fetchProductGuides(sb)])
+      .then(([cats, product, guides]) => {
         setCategories(cats);
+        setOtherGuides(
+          guides.flatMap((g) => {
+            const parsed = g.id === Number(id) ? null : parseGuide(g.size_guide);
+            return parsed ? [{ id: g.id, name: g.name, guide: parsed }] : [];
+          })
+        );
         if (product) {
           setName(product.name);
           setDescription(product.description);
@@ -101,6 +128,8 @@ export default function AdminProductPage() {
               origStock: v.stock,
             }))
           );
+          const sizeGuide = parseGuide(product.size_guide);
+          if (sizeGuide) setGuide(draftFromGuide(sizeGuide));
         } else if (isNew) {
           setVariants([{ key: newKey(), size: "Unitalla", color: "", stock: "1" }]);
         } else {
@@ -154,7 +183,12 @@ export default function AdminProductPage() {
 
   function addQuickSize(size: string) {
     if (variants.some((v) => v.size === size && v.color === "")) return;
-    setVariants((prev) => [...prev, { key: newKey(), size, color: "", stock: mode === "stock" ? "1" : "0" }]);
+    const added = { key: newKey(), size, color: "", stock: mode === "stock" ? "1" : "0" };
+    setVariants((prev) => {
+      // La fila "Unitalla" con que arranca un producto nuevo se reemplaza si nadie la tocó
+      const onlyDefault = prev.length === 1 && !prev[0].id && prev[0].size === "Unitalla" && prev[0].color === "" && prev[0].stock === "1";
+      return onlyDefault ? [added] : [...prev, added];
+    });
   }
 
   // ---------- Guardar ----------
@@ -172,6 +206,8 @@ export default function AdminProductPage() {
       if (combos.has(combo)) return setError(`La talla "${v.size}"${v.color ? ` color "${v.color}"` : ""} está repetida.`);
       combos.add(combo);
     }
+    const sizeGuide = guide ? guideFromDraft(guide, uniqueSizes(variants)) : null;
+    if (guide && !sizeGuide) return setError("La guía de tallas está vacía: escribe al menos una medida o quítala.");
 
     setSaving(true);
     const sb = getSupabase();
@@ -193,7 +229,8 @@ export default function AdminProductPage() {
       const failed = uploads.find((r) => r.status === "rejected");
       if (failed) throw failed.reason;
 
-      // 2) Datos, fotos y variantes en UNA transacción (0006_admin_save_product.sql):
+      // 2) Datos (con la guía de tallas), fotos y variantes en UNA transacción
+      //    (admin_save_product, 0006 y 0007):
       //    o se guarda todo o nada. El stock de una variante existente solo se escribe
       //    si cambió y nadie lo movió mientras se editaba (si hubo una venta, falla y avisa).
       const { error } = await sb.rpc("admin_save_product", {
@@ -206,6 +243,7 @@ export default function AdminProductPage() {
           mode,
           preorder_days: mode === "preorder" && preorderDays ? Number(preorderDays) : null,
           is_active: isActive,
+          size_guide: sizeGuide,
         },
         p_images: uploaded.map((img) => ({ path: img.path, thumb_path: img.thumb ?? null })),
         p_variants: variants.map((v) => ({
@@ -227,7 +265,7 @@ export default function AdminProductPage() {
       // 3) Ya guardado: borrar del bucket las fotos quitadas (salvo las que usa algún pedido)
       await deleteUnusedProductImages(sb, removedPaths).catch(() => {});
       toast("Producto guardado");
-      router.push("/admin");
+      router.push(ADMIN_PRODUCTS);
     } catch (err) {
       setError(errorMessage(err));
       setSaving(false);
@@ -249,22 +287,20 @@ export default function AdminProductPage() {
       return;
     }
     setSaving(true);
-    const sb = getSupabase();
-    const { error } = await sb.from("products").delete().eq("id", Number(id));
-    if (error) {
+    try {
+      // Incluye las fotos del borrador que aún no se guardaron en la BD
+      await deleteProductById(getSupabase(), Number(id), images.flatMap((i) => [i.path, i.thumb]).concat(removedPaths));
+    } catch (err) {
       setSaving(false);
-      return setError(errorMessage(error));
+      return setError(errorMessage(err));
     }
-    // Se conservan las fotos que usa algún pedido (su miniatura en "Mis pedidos")
-    const paths = images.flatMap((i) => [i.path, i.thumb]).concat(removedPaths);
-    await deleteUnusedProductImages(sb, paths).catch(() => {});
     toast("Producto eliminado");
-    router.push("/admin");
+    router.push(ADMIN_PRODUCTS);
   }
 
   return (
     <form onSubmit={save} noValidate className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <Link href="/admin" className="flex items-center gap-1 text-sm text-muted">
+      <Link href={ADMIN_PRODUCTS} className="flex items-center gap-1 text-sm text-muted">
         <ArrowLeft className="size-4" /> Administración
       </Link>
       <PageTitle>{isNew ? "Nuevo producto" : "Editar producto"}</PageTitle>
@@ -399,7 +435,7 @@ export default function AdminProductPage() {
           <p className="text-xs text-muted">En sobre pedido no se maneja stock; solo define qué tallas y colores se pueden pedir.</p>
         )}
         <div className="flex flex-wrap gap-2">
-          {QUICK_SIZES.map((s) => (
+          {quickSizesFor(categories.find((c) => c.id === categoryId)).map((s) => (
             <Chip key={s} onClick={() => addQuickSize(s)}>
               + {s}
             </Chip>
@@ -447,6 +483,15 @@ export default function AdminProductPage() {
           Agregar variante
         </Button>
       </section>
+
+      <SizeGuideEditor
+        draft={guide}
+        onChange={setGuide}
+        sizes={uniqueSizes(variants)}
+        figure={figureFor(categories.find((c) => c.id === categoryId)?.name)}
+        others={otherGuides}
+        onCopied={toast}
+      />
 
       {error && <ErrorBox message={error} />}
       <div className="sticky bottom-20 flex flex-col gap-2 md:bottom-4">

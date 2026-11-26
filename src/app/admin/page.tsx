@@ -1,15 +1,25 @@
 "use client";
 
-import { ChevronRight, Plus, Receipt, Settings, Shirt, Tags } from "lucide-react";
+import { ChevronRight, Loader2, Plus, Receipt, Settings, Shirt, Tags, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 import { OrderCard, Thumb } from "@/components/order-parts";
-import { Badge, Button, ButtonLink, Card, Chip, EmptyState, ErrorBox, PageTitle, Spinner } from "@/components/ui";
+import { useToast } from "@/components/toast";
+import { Badge, Button, ButtonLink, Card, Chip, cn, EmptyState, ErrorBox, PageTitle, Spinner } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { formatMoney, ORDER_STATUS } from "@/lib/format";
 import { thumbOrFull } from "@/lib/images";
-import { type AdminProduct, countOrders, fetchAdminProducts, fetchOrdersPage, totalStock } from "@/lib/queries";
+import {
+  ADMIN_PRODUCTS,
+  type AdminProduct,
+  countOrders,
+  deleteProduct,
+  fetchAdminProducts,
+  fetchOrdersPage,
+  totalStock,
+} from "@/lib/queries";
 import { getSupabase } from "@/lib/supabase/browser";
 import type { Order, OrderStatus } from "@/lib/types";
 
@@ -31,7 +41,20 @@ interface OrdersState {
 }
 
 export default function AdminPage() {
-  const [section, setSection] = useState<Section>("orders");
+  // useSearchParams necesita Suspense para que la página siga siendo estática
+  return (
+    <Suspense fallback={<Spinner />}>
+      <AdminPanel />
+    </Suspense>
+  );
+}
+
+function AdminPanel() {
+  const toast = useToast();
+  // La pestaña vive en la URL (`?seccion=productos`) para volver a ella al regresar de un producto
+  const searchParams = useSearchParams();
+  const [section, setSection] = useState<Section>(() => (searchParams.get("seccion") === "productos" ? "products" : "orders"));
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [summary, setSummary] = useState<{ pending: number; products: AdminProduct[] } | null>(null);
   const [ordersState, setOrdersState] = useState<OrdersState | null>(null);
@@ -82,6 +105,31 @@ export default function AdminPage() {
     }
   }
 
+  function changeSection(s: Section) {
+    setSection(s);
+    window.history.replaceState(null, "", s === "products" ? ADMIN_PRODUCTS : "/admin");
+  }
+
+  async function removeProduct(product: AdminProduct) {
+    if (
+      !window.confirm(
+        `Se borrará «${product.name}» y sus fotos. Los pedidos anteriores conservan su registro y su foto. Si solo quieres dejar de mostrarlo, mejor ocúltalo desde su ficha. ¿Eliminar?`
+      )
+    ) {
+      return;
+    }
+    setDeletingId(product.id);
+    try {
+      await deleteProduct(getSupabase(), product.id);
+      setSummary((prev) => prev && { ...prev, products: prev.products.filter((p) => p.id !== product.id) });
+      toast("Producto eliminado");
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (error) return <ErrorBox message={error} />;
   if (!summary) return <Spinner />;
 
@@ -121,7 +169,7 @@ export default function AdminPage() {
           <button
             key={s}
             type="button"
-            onClick={() => setSection(s)}
+            onClick={() => changeSection(s)}
             className={`-mb-px border-b-2 px-4 py-2 font-semibold ${section === s ? "border-brand text-brand" : "border-transparent text-muted"}`}>
             {s === "orders" ? "Pedidos" : `Productos (${summary.products.length})`}
           </button>
@@ -172,7 +220,13 @@ export default function AdminPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {summary.products.map((p) => (
-            <AdminProductRow key={p.id} product={p} />
+            <AdminProductRow
+              key={p.id}
+              product={p}
+              deleting={deletingId === p.id}
+              disabled={deletingId !== null}
+              onDelete={() => removeProduct(p)}
+            />
           ))}
         </div>
       )}
@@ -180,13 +234,23 @@ export default function AdminPage() {
   );
 }
 
-function AdminProductRow({ product }: { product: AdminProduct }) {
+function AdminProductRow({
+  product,
+  deleting,
+  disabled,
+  onDelete,
+}: {
+  product: AdminProduct;
+  deleting: boolean;
+  disabled: boolean;
+  onDelete: () => void;
+}) {
   const stock = totalStock(product);
   return (
-    <Link href={`/admin/productos/${product.id}`}>
-      <Card className="flex-row items-center gap-3 hover:border-brand/40">
+    <Card className={cn("flex-row items-center gap-1 hover:border-brand/40", deleting && "opacity-60")}>
+      <Link href={`/admin/productos/${product.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <Thumb path={thumbOrFull(product.product_images[0])} className="h-[70px] w-14" />
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="line-clamp-1">{product.name}</span>
           <span className="font-semibold">{formatMoney(product.price)}</span>
           <div className="flex flex-wrap gap-1">
@@ -198,8 +262,17 @@ function AdminProductRow({ product }: { product: AdminProduct }) {
             )}
           </div>
         </div>
-        <ChevronRight className="size-5 text-muted" />
-      </Card>
-    </Link>
+        <ChevronRight className="size-5 shrink-0 text-muted" />
+      </Link>
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={disabled}
+        aria-label={`Eliminar ${product.name}`}
+        title="Eliminar"
+        className="grid size-11 shrink-0 place-items-center rounded-full text-muted transition hover:bg-danger-soft hover:text-danger disabled:pointer-events-none disabled:opacity-50">
+        {deleting ? <Loader2 className="size-5 animate-spin" /> : <Trash2 className="size-5" />}
+      </button>
+    </Card>
   );
 }

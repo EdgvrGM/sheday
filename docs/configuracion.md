@@ -1,7 +1,7 @@
 # Sheday: qué hace falta para que todo funcione
 
 Lista de lo que se configura **fuera del código** (Supabase, Meta, Cloudflare), en el orden en que hay que hacerlo.
-Marca cada casilla al terminar. Última revisión: 24 nov 2026.
+Marca cada casilla al terminar. Última revisión: 26 nov 2026.
 
 > **Cada push a `main` despliega a producción** (Cloudflare Workers Builds).
 > Si un paso dice "antes del deploy", hazlo antes de hacer push.
@@ -12,7 +12,7 @@ Marca cada casilla al terminar. Última revisión: 24 nov 2026.
 
 | Pieza | Estado |
 |---|---|
-| Migraciones 0001 a 0006 | ✅ Aplicadas |
+| Migraciones 0001 a 0007 | ✅ Aplicadas |
 | Login nuevo (celular + código por WhatsApp) | ⚠️ Desplegado, pero **no funciona** hasta terminar §2 (la tienda aún no es pública) |
 | Turnstile (anti-bots) | 💤 Listo en el código, apagado |
 | Dominio `sheday.mx` | 💤 Sin comprar |
@@ -29,7 +29,8 @@ Se ejecutan a mano en Supabase → **SQL Editor**, en orden. Copia el archivo co
 - [x] `0004_phone_auth.sql`: el celular pasa a ser el usuario de Supabase Auth.
 - [x] `0005_image_thumbs.sql`: columna `thumb_path` (miniaturas de 480 px).
 - [x] `0006_admin_save_product.sql`: RPC `admin_save_product` (guardar producto en una transacción).
-- [ ] `0007` (todavía no existe): endurecimiento de seguridad. Se escribe y se ejecuta **después** de terminar §2.
+- [x] `0007_product_size_guide.sql`: columna `products.size_guide` y `admin_save_product` que la guarda (26 nov 2026).
+- [ ] `0008` (todavía no existe): endurecimiento de seguridad. Se escribe y se ejecuta **después** de terminar §2.
 
 Para comprobar qué está aplicado:
 
@@ -38,7 +39,9 @@ select
   exists (select 1 from pg_proc where proname = 'sync_profile_phone')   as "0004",
   exists (select 1 from information_schema.columns
           where table_name = 'product_images' and column_name = 'thumb_path') as "0005",
-  exists (select 1 from pg_proc where proname = 'admin_save_product')   as "0006";
+  exists (select 1 from pg_proc where proname = 'admin_save_product')   as "0006",
+  exists (select 1 from information_schema.columns
+          where table_name = 'products' and column_name = 'size_guide') as "0007";
 ```
 
 ---

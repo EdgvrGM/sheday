@@ -61,6 +61,8 @@ export interface Product {
   created_at: string;
   product_images: ProductImage[];
   product_variants: ProductVariant[];
+  /** Guía de tallas propia (0007). JSON crudo: se lee con `parseGuide()` de size-guides.ts. */
+  size_guide?: unknown;
 }
 
 export interface OrderItem {
