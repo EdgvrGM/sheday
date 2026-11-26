@@ -4,10 +4,36 @@ import { Shirt } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 
+import { imagesForColor } from "@/lib/images";
+import type { ProductVariant } from "@/lib/types";
+
+import { resolveSelection, useProductSelection } from "./product-selection";
 import { cn } from "./ui";
 
+type GalleryImage = { src: string; thumb: string; color?: string | null };
+
+/**
+ * Galería del producto: si sus fotos tienen color (0008), muestra las del color
+ * elegido más las de todos los colores.
+ */
+export function ProductGallery({
+  images,
+  variants,
+  alt,
+}: {
+  images: GalleryImage[];
+  variants: Pick<ProductVariant, "size" | "color">[];
+  alt: string;
+}) {
+  const { size, color } = useProductSelection();
+  const { effectiveColor } = resolveSelection(variants, size, color);
+  const shown = imagesForColor(images, effectiveColor);
+  // La key reinicia el carrusel (vuelve a la primera foto) al cambiar de color
+  return <Carousel key={shown.map((i) => i.src).join("|")} images={shown} alt={alt} />;
+}
+
 /** Carrusel deslizable en celular; miniaturas en escritorio. */
-export function ProductGallery({ images, alt }: { images: { src: string; thumb: string }[]; alt: string }) {
+function Carousel({ images, alt }: { images: GalleryImage[]; alt: string }) {
   const [index, setIndex] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
 

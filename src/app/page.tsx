@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/product-card";
 import { buttonClass, chipClass, EmptyState, ErrorBox } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { arrivalLabel } from "@/lib/format";
-import { type CardProduct, fetchCatalog, fetchCategories, isAvailable, isNew, newSince } from "@/lib/queries";
+import { type CardProduct, catalogOrder, fetchCatalog, fetchCategories, isAvailable, isNew, newSince } from "@/lib/queries";
 import { getPublicSupabase } from "@/lib/supabase/public";
 import type { Category } from "@/lib/types";
 
@@ -63,9 +63,8 @@ export default async function CatalogPage(props: PageProps<"/">) {
   const fresh = hasFilters ? [] : products.filter((p) => isNew(p) && isAvailable(p));
   const latest = fresh[0];
 
-  const filtered = products
-    .filter((p) => !nuevo || isAvailable(p))
-    .sort((a, b) => Number(isAvailable(b)) - Number(isAvailable(a)));
+  // Nuevo primero, luego lo que tiene más tallas (con categorías intercaladas) y lo agotado al final
+  const filtered = catalogOrder(products.filter((p) => !nuevo || isAvailable(p)));
 
   return (
     <div className="flex flex-col gap-5">

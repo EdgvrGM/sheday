@@ -4,6 +4,7 @@ import { cache } from "react";
 
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductPurchase } from "@/components/product-purchase";
+import { ProductSelectionProvider } from "@/components/product-selection";
 import { Badge } from "@/components/ui";
 import { SITE_URL } from "@/lib/env";
 import { formatMoney, parseProductId, productHref, productSlug } from "@/lib/format";
@@ -79,44 +80,48 @@ export default async function ProductPage(props: PageProps<"/producto/[slug]">) 
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 md:gap-10">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
-      />
-      <ProductGallery
-        images={product.product_images.map((i) => ({ src: imageUrl(i.path)!, thumb: imageUrl(thumbOrFull(i))! }))}
-        alt={product.name}
-      />
+    // La talla y el color elegidos los comparten la galería y la compra
+    <ProductSelectionProvider>
+      <div className="grid gap-6 md:grid-cols-2 md:gap-10">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        />
+        <ProductGallery
+          images={product.product_images.map((i) => ({ src: imageUrl(i.path)!, thumb: imageUrl(thumbOrFull(i))!, color: i.color }))}
+          variants={product.product_variants}
+          alt={product.name}
+        />
 
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          {isPreorder ? (
-            <Badge className="bg-ink text-paper">Sobre pedido</Badge>
-          ) : (
-            <Badge className="bg-success-soft text-success">Entrega inmediata</Badge>
-          )}
-          <h1 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">{product.name}</h1>
-          <p className="text-2xl font-semibold">{formatMoney(product.price)}</p>
-        </div>
-
-        {isPreorder && (
-          <p className="rounded-xl bg-surface p-4 text-sm">
-            Lo pedimos especialmente para ti
-            {product.preorder_days ? `; llega en aproximadamente ${product.preorder_days} días` : ""}. Se pide un
-            anticipo al confirmar.
-          </p>
-        )}
-
-        <ProductPurchase product={product} whatsappNumber={settings?.whatsapp_number ?? ""} url={url} />
-
-        {product.description && (
-          <div className="flex flex-col gap-1">
-            <h2 className="text-sm font-semibold">Descripción</h2>
-            <p className="whitespace-pre-line text-muted">{product.description}</p>
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
+            {isPreorder ? (
+              <Badge className="bg-ink text-paper">Sobre pedido</Badge>
+            ) : (
+              <Badge className="bg-success-soft text-success">Entrega inmediata</Badge>
+            )}
+            <h1 className="font-display text-3xl leading-tight font-semibold text-balance md:text-4xl">{product.name}</h1>
+            <p className="text-2xl font-semibold">{formatMoney(product.price)}</p>
           </div>
-        )}
+
+          {isPreorder && (
+            <p className="rounded-xl bg-surface p-4 text-sm">
+              Lo pedimos especialmente para ti
+              {product.preorder_days ? `; llega en aproximadamente ${product.preorder_days} días` : ""}. Se pide un
+              anticipo al confirmar.
+            </p>
+          )}
+
+          <ProductPurchase product={product} whatsappNumber={settings?.whatsapp_number ?? ""} url={url} />
+
+          {product.description && (
+            <div className="flex flex-col gap-1">
+              <h2 className="text-sm font-semibold">Descripción</h2>
+              <p className="whitespace-pre-line text-muted">{product.description}</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </ProductSelectionProvider>
   );
 }

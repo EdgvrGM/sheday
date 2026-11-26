@@ -12,7 +12,7 @@ Marca cada casilla al terminar. Última revisión: 26 nov 2026.
 
 | Pieza | Estado |
 |---|---|
-| Migraciones 0001 a 0007 | ✅ Aplicadas |
+| Migraciones 0001 a 0008 | ✅ Aplicadas |
 | Login nuevo (celular + código por WhatsApp) | ⚠️ Desplegado, pero **no funciona** hasta terminar §2 (la tienda aún no es pública) |
 | Turnstile (anti-bots) | 💤 Listo en el código, apagado |
 | Dominio `sheday.mx` | 💤 Sin comprar |
@@ -30,7 +30,8 @@ Se ejecutan a mano en Supabase → **SQL Editor**, en orden. Copia el archivo co
 - [x] `0005_image_thumbs.sql`: columna `thumb_path` (miniaturas de 480 px).
 - [x] `0006_admin_save_product.sql`: RPC `admin_save_product` (guardar producto en una transacción).
 - [x] `0007_product_size_guide.sql`: columna `products.size_guide` y `admin_save_product` que la guarda (26 nov 2026).
-- [ ] `0008` (todavía no existe): endurecimiento de seguridad. Se escribe y se ejecuta **después** de terminar §2.
+- [x] `0008_image_colors.sql` (26 nov 2026): columna `product_images.color`, `admin_save_product` que la guarda y `place_order` que guarda en el pedido la foto del color elegido. Se puede ejecutar antes o después del deploy; mientras no se ejecute, los colores de las fotos no se guardan.
+- [ ] `0009` (todavía no existe): endurecimiento de seguridad. Se escribe y se ejecuta **después** de terminar §2.
 
 Para comprobar qué está aplicado:
 
@@ -41,7 +42,9 @@ select
           where table_name = 'product_images' and column_name = 'thumb_path') as "0005",
   exists (select 1 from pg_proc where proname = 'admin_save_product')   as "0006",
   exists (select 1 from information_schema.columns
-          where table_name = 'products' and column_name = 'size_guide') as "0007";
+          where table_name = 'products' and column_name = 'size_guide') as "0007",
+  exists (select 1 from information_schema.columns
+          where table_name = 'product_images' and column_name = 'color') as "0008";
 ```
 
 ---

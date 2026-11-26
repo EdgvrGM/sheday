@@ -217,3 +217,43 @@ export function availableSizes(p: StockInfo): string[] {
 export function isAvailable(p: StockInfo): boolean {
   return p.mode === "preorder" ? p.product_variants.length > 0 : totalStock(p) > 0;
 }
+
+/** Fracción de las tallas del producto que se pueden pedir ahora (0 a 1). */
+function sizeDepth(p: StockInfo): number {
+  const all = new Set(p.product_variants.map((v) => v.size)).size;
+  return all === 0 ? 0 : availableSizes(p).length / all;
+}
+
+/** Cuántas piezas siguientes se revisan para no repetir categoría (no se adelanta más que eso). */
+const MIX_WINDOW = 4;
+
+/** Reacomoda para que no salgan dos piezas seguidas de la misma categoría, sin mover nada muy lejos. */
+function mixCategories<T extends { category_id: number | null }>(list: T[]): T[] {
+  const rest = [...list];
+  const out: T[] = [];
+  while (rest.length > 0) {
+    const prev = out.at(-1)?.category_id;
+    let i = rest.slice(0, MIX_WINDOW).findIndex((p) => p.category_id !== prev);
+    if (i < 0) i = 0;
+    out.push(...rest.splice(i, 1));
+  }
+  return out;
+}
+
+/**
+ * Orden del catálogo de la tienda:
+ * 1. Lo nuevo (7 días), del más reciente al más viejo.
+ * 2. El resto de lo disponible: primero las piezas con la mitad o más de sus tallas,
+ *    luego las de pocas tallas; cada grupo del más reciente al más viejo y con categorías intercaladas.
+ * 3. Lo agotado al final.
+ */
+export function catalogOrder<T extends CardProduct>(products: T[], now = Date.now()): T[] {
+  const byDate = [...products].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  const available = byDate.filter((p) => isAvailable(p));
+  const fresh = available.filter((p) => isNew(p, now));
+  const older = available.filter((p) => !isNew(p, now));
+  const full = older.filter((p) => sizeDepth(p) >= 0.5);
+  const broken = older.filter((p) => sizeDepth(p) < 0.5);
+  const soldOut = byDate.filter((p) => !isAvailable(p));
+  return [...fresh, ...mixCategories(full), ...mixCategories(broken), ...soldOut];
+}

@@ -39,6 +39,8 @@ export interface ProductImage {
   /** Miniatura de 480 px (0005). null en fotos subidas antes. */
   thumb_path?: string | null;
   sort_order: number;
+  /** Color de la variante que muestra (0008). null = foto de todos los colores. */
+  color?: string | null;
 }
 
 export interface ProductVariant {

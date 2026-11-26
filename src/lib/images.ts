@@ -13,6 +13,33 @@ export function imageUrl(path: string | null | undefined): string | undefined {
   return `${SUPABASE_URL}/storage/v1/object/public/${PRODUCT_BUCKET}/${path}`;
 }
 
+// ---------- Fotos por color (0008) ----------
+
+type Colored = { color?: string | null };
+
+/** ¿Misma etiqueta de color? (sin importar mayúsculas ni espacios) */
+export function sameColor(a: string | null | undefined, b: string | null | undefined): boolean {
+  return !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+/**
+ * Fotos que se ven con un color: las suyas más las de todos los colores (sin etiqueta).
+ * Sin color elegido, las del primer color etiquetado. Si nada está etiquetado, o el
+ * color no tiene fotos propias, todas (así un producto sin etiquetas se ve como antes).
+ */
+export function imagesForColor<T extends Colored>(images: T[], color: string | null | undefined): T[] {
+  const tagged = images.filter((i) => i.color);
+  if (tagged.length === 0) return images;
+  const target = color ? (tagged.some((i) => sameColor(i.color, color)) ? color : null) : tagged[0].color;
+  if (!target) return images;
+  return images.filter((i) => !i.color || sameColor(i.color, target));
+}
+
+/** Foto que representa a un color (bolsa y pedido): la primera de ese color o la portada. */
+export function imageForColor<T extends Colored>(images: T[], color: string | null | undefined): T | undefined {
+  return images.find((i) => sameColor(i.color, color)) ?? images[0];
+}
+
 /** Miniatura si existe; si no (fotos de antes de 0005), la foto completa. */
 export function thumbOrFull(img: { path: string; thumb_path?: string | null } | null | undefined): string | null {
   return img ? img.thumb_path || img.path : null;

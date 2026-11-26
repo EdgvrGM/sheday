@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { formatMoney } from "./format";
-import { thumbOrFull } from "./images";
+import { imageForColor, thumbOrFull } from "./images";
 import { getSupabase } from "./supabase/browser";
 import type { CartItem, ProductMode } from "./types";
 
@@ -112,7 +112,7 @@ interface VariantRow {
     price: number | string;
     mode: ProductMode;
     is_active: boolean;
-    product_images: { id: number; path: string; thumb_path?: string | null; sort_order: number }[];
+    product_images: { id: number; path: string; thumb_path?: string | null; sort_order: number; color?: string | null }[];
   } | null;
 }
 
@@ -177,7 +177,11 @@ async function runSync(sb: SupabaseClient): Promise<string[]> {
       );
     }
 
-    const cover = [...p.product_images].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id)[0];
+    // La foto del color de la pieza (0008); si ese color no tiene fotos propias, la portada
+    const photo = imageForColor(
+      [...p.product_images].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id),
+      row.color
+    );
     next.push({
       ...item,
       productId: p.id,
@@ -187,7 +191,7 @@ async function runSync(sb: SupabaseClient): Promise<string[]> {
       price,
       isPreorder,
       maxStock,
-      imagePath: thumbOrFull(cover),
+      imagePath: thumbOrFull(photo),
       quantity,
     });
   }

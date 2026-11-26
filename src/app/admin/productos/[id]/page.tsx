@@ -5,22 +5,34 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { draftFromGuide, type GuideDraft, guideFromDraft, SizeGuideEditor } from "@/components/size-guide-editor";
+import { draftFromGuide, type GuideDraft, SizeGuideEditor, validateGuide } from "@/components/size-guide-editor";
 import { useToast } from "@/components/toast";
 import { Button, Card, Chip, ErrorBox, Field, inputClass, PageTitle, Spinner, TextArea, cn } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { digitsInput, MAX, priceInput, textInput } from "@/lib/input";
-import { createThumbnail, deleteUnusedProductImages, imageUrl, thumbOrFull, uploadProductImage } from "@/lib/images";
+import { createThumbnail, deleteUnusedProductImages, imageUrl, sameColor, thumbOrFull, uploadProductImage } from "@/lib/images";
 import { ADMIN_PRODUCTS, deleteProduct as deleteProductById, fetchCategories, fetchProduct, fetchProductGuides } from "@/lib/queries";
-import { figureFor, parseGuide, type SizeGuide, templateSizesFor } from "@/lib/size-guides";
+import { figureFor, parseGuide, quickSizesFor as categoryQuickSizes, type SizeGuide } from "@/lib/size-guides";
 import { getSupabase } from "@/lib/supabase/browser";
 import type { Category, ProductMode } from "@/lib/types";
 
 const QUICK_SIZES = ["XS", "S", "M", "L", "XL", "Unitalla"];
 
-/** Botones rápidos según la categoría: si tiene plantillas de guía (pantalones: MX y CH–XG), sus tallas. */
+/** Botones rápidos según la categoría: las tallas de sus plantillas de guía (pantalones: MX y CH–XG; faldas: MX y XS–XL). */
 function quickSizesFor(category: Category | undefined): string[] {
-  return templateSizesFor(category?.name) ?? QUICK_SIZES;
+  return categoryQuickSizes(category?.name, QUICK_SIZES);
+}
+
+/** Colores únicos de las variantes, en orden (para etiquetar las fotos). */
+function uniqueColors(variants: { color: string }[]): string[] {
+  const seen = new Set<string>();
+  return variants.flatMap((v) => {
+    const color = v.color.trim();
+    const key = color.toLowerCase();
+    if (!color || seen.has(key)) return [];
+    seen.add(key);
+    return [color];
+  });
 }
 
 /** Tallas únicas de las variantes, en orden (filas de la guía de tallas). */
@@ -41,6 +53,8 @@ interface ImageDraft {
   thumb?: string; // su miniatura de 480 px
   file?: File; // nueva
   preview: string;
+  /** Color de la variante que muestra ("" = todos los colores). */
+  color: string;
 }
 
 interface VariantDraft {
@@ -116,6 +130,7 @@ export default function AdminProductPage() {
               path: i.path,
               thumb: i.thumb_path ?? undefined,
               preview: imageUrl(thumbOrFull(i))!,
+              color: i.color ?? "",
             }))
           );
           setVariants(
@@ -142,6 +157,8 @@ export default function AdminProductPage() {
 
   if (!loaded) return <Spinner />;
 
+  const productColors = uniqueColors(variants);
+
   // ---------- Fotos ----------
   function addFiles(files: FileList | null) {
     if (!files) return;
@@ -150,7 +167,7 @@ export default function AdminProductPage() {
       .map((file) => {
         const preview = URL.createObjectURL(file);
         blobUrls.current.add(preview);
-        return { key: newKey(), file, preview };
+        return { key: newKey(), file, preview, color: "" };
       });
     setImages((prev) => [...prev, ...added]);
   }
@@ -206,8 +223,9 @@ export default function AdminProductPage() {
       if (combos.has(combo)) return setError(`La talla "${v.size}"${v.color ? ` color "${v.color}"` : ""} está repetida.`);
       combos.add(combo);
     }
-    const sizeGuide = guide ? guideFromDraft(guide, uniqueSizes(variants)) : null;
-    if (guide && !sizeGuide) return setError("La guía de tallas está vacía: escribe al menos una medida o quítala.");
+    const checked = guide ? validateGuide(guide) : null;
+    if (checked && "error" in checked) return setError(checked.error);
+    const sizeGuide = checked?.guide ?? null;
 
     setSaving(true);
     const sb = getSupabase();
@@ -245,7 +263,12 @@ export default function AdminProductPage() {
           is_active: isActive,
           size_guide: sizeGuide,
         },
-        p_images: uploaded.map((img) => ({ path: img.path, thumb_path: img.thumb ?? null })),
+        p_images: uploaded.map((img) => ({
+          path: img.path,
+          thumb_path: img.thumb ?? null,
+          // Si el color ya no existe en las variantes, la foto pasa a ser de todos los colores
+          color: productColors.find((c) => sameColor(c, img.color)) ?? null,
+        })),
         p_variants: variants.map((v) => ({
           id: v.id ?? null,
           size: v.size.trim(),
@@ -308,41 +331,62 @@ export default function AdminProductPage() {
       {/* Fotos */}
       <section className="flex flex-col gap-2">
         <h2 className="font-bold">Fotos</h2>
-        <p className="text-xs text-muted">La primera es la portada. Se comprimen automáticamente al guardar.</p>
+        <p className="text-xs text-muted">
+          La primera es la portada. Se comprimen automáticamente al guardar.
+          {productColors.length > 1 && " Elige de qué color es cada foto: en la tienda, al escoger un color se ven sus fotos y las marcadas «Todos»."}
+        </p>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {images.map((img, idx) => (
-            <div key={img.key} className="relative aspect-[4/5] overflow-hidden rounded-lg bg-surface">
-              {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:) */}
-              <img src={img.preview} alt="" className="h-full w-full object-cover" />
-              {idx === 0 && (
-                <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-brand px-2 text-xs font-bold text-paper">
-                  <Star className="size-3" /> Portada
-                </span>
-              )}
-              <div className="absolute inset-x-1 top-1 flex justify-between">
-                <div className="flex rounded-full bg-black/50 text-white">
-                  <button type="button" aria-label="Mover a la izquierda" disabled={idx === 0} onClick={() => moveImage(idx, -1)} className="p-2 disabled:opacity-30">
-                    <ChevronLeft className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Mover a la derecha"
-                    disabled={idx === images.length - 1}
-                    onClick={() => moveImage(idx, 1)}
-                    className="p-2 disabled:opacity-30">
-                    <ChevronRight className="size-4" />
+            <div key={img.key} className="flex flex-col gap-1">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-surface">
+                {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:) */}
+                <img src={img.preview} alt="" className="h-full w-full object-cover" />
+                {idx === 0 && (
+                  <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-brand px-2 text-xs font-bold text-paper">
+                    <Star className="size-3" /> Portada
+                  </span>
+                )}
+                <div className="absolute inset-x-1 top-1 flex justify-between">
+                  <div className="flex rounded-full bg-black/50 text-white">
+                    <button type="button" aria-label="Mover a la izquierda" disabled={idx === 0} onClick={() => moveImage(idx, -1)} className="p-2 disabled:opacity-30">
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Mover a la derecha"
+                      disabled={idx === images.length - 1}
+                      onClick={() => moveImage(idx, 1)}
+                      className="p-2 disabled:opacity-30">
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </div>
+                  <button type="button" aria-label="Quitar foto" onClick={() => removeImage(img)} className="rounded-full bg-black/50 p-2 text-white">
+                    <X className="size-4" />
                   </button>
                 </div>
-                <button type="button" aria-label="Quitar foto" onClick={() => removeImage(img)} className="rounded-full bg-black/50 p-2 text-white">
-                  <X className="size-4" />
-                </button>
               </div>
+              {productColors.length > 1 && (
+                <select
+                  value={productColors.find((c) => sameColor(c, img.color)) ?? ""}
+                  onChange={(e) => setImages((prev) => prev.map((i) => (i.key === img.key ? { ...i, color: e.target.value } : i)))}
+                  aria-label={`Color de la foto ${idx + 1}`}
+                  // `!`: inputClass trae px-3.5 y py-3
+                  className={cn(inputClass, "min-h-11 px-2! py-1.5! text-sm")}>
+                  <option value="">Todos</option>
+                  {productColors.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           ))}
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            className="flex aspect-[4/5] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-line text-sm text-muted hover:border-brand hover:text-brand">
+            // self-start: las fotos con selector de color son más altas y lo estiraban
+            className="flex aspect-[4/5] flex-col items-center justify-center gap-1 self-start rounded-lg border-2 border-dashed border-line text-sm text-muted hover:border-brand hover:text-brand">
             <ImagePlus className="size-7" />
             Agregar
           </button>

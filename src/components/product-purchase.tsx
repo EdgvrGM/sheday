@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { cartActions } from "@/lib/cart";
-import { thumbOrFull } from "@/lib/images";
+import { imageForColor, thumbOrFull } from "@/lib/images";
 import { parseGuide } from "@/lib/size-guides";
 import { productQuestionMessage, whatsappLink } from "@/lib/whatsapp";
 import type { Product } from "@/lib/types";
 
+import { resolveSelection, useProductSelection } from "./product-selection";
 import { SizeGuide } from "./size-guide";
 import { useToast } from "./toast";
 import { Button, ButtonLink, Chip, QuantityStepper } from "./ui";
@@ -25,21 +26,16 @@ export function ProductPurchase({
 }) {
   const toast = useToast();
   const router = useRouter();
-  const [size, setSize] = useState<string | null>(null);
-  const [color, setColor] = useState<string | null>(null);
+  // Compartida con la galería, que muestra las fotos del color elegido
+  const { size, color, setSize, setColor } = useProductSelection();
   const [qty, setQty] = useState(1);
 
   const isPreorder = product.mode === "preorder";
   const variants = product.product_variants;
-  const sizes = [...new Set(variants.map((v) => v.size))];
   // Guía de tallas propia del producto (se escribe en su ficha del admin)
   const guide = parseGuide(product.size_guide);
-  const effectiveSize = size ?? (sizes.length === 1 ? sizes[0] : null);
-  const colors = [
-    ...new Set(variants.filter((v) => !effectiveSize || v.size === effectiveSize).map((v) => v.color).filter(Boolean)),
-  ];
   // Si solo hay una opción, se elige sola
-  const effectiveColor = color ?? (colors.length <= 1 ? (colors[0] ?? "") : null);
+  const { sizes, effectiveSize, colors, effectiveColor } = resolveSelection(variants, size, color);
   const variant = variants.find((v) => v.size === effectiveSize && effectiveColor != null && v.color === effectiveColor);
 
   const stockForSize = (s: string) => variants.filter((v) => v.size === s).reduce((n, v) => n + v.stock, 0);
@@ -59,7 +55,8 @@ export function ProductPurchase({
       size: variant.size,
       color: variant.color,
       price: Number(product.price),
-      imagePath: thumbOrFull(product.product_images[0]),
+      // La foto del color elegido (o la portada si ese color no tiene fotos propias)
+      imagePath: thumbOrFull(imageForColor(product.product_images, variant.color)),
       isPreorder,
       quantity: Math.min(qty, Math.max(1, maxQty)),
       maxStock: isPreorder ? null : variant.stock,
