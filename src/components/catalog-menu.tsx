@@ -15,12 +15,6 @@ import { cn } from "./ui";
 // Las categorías se piden una sola vez, al abrir el menú por primera vez.
 let cached: Category[] | null = null;
 
-const QUICK_LINKS = [
-  { href: "/", label: "Ver todo" },
-  { href: "/?nuevo=1", label: "Lo nuevo" },
-  { href: "/?modo=stock", label: "Entrega inmediata" },
-];
-
 /** Botón ☰ del encabezado (celular) que despliega el catálogo bajo el encabezado. */
 export function CatalogMenu() {
   const pathname = usePathname();
@@ -104,15 +98,9 @@ export function CatalogMenu() {
             aria-label="Catálogo"
             className="absolute inset-x-0 top-full z-40 max-h-[calc(100dvh-var(--header-h)-4rem)] overflow-y-auto border-b border-line bg-overlay shadow-lg panel-lift md:hidden">
             <nav aria-label="Catálogo" className="mx-auto flex max-w-6xl flex-col px-4 pt-2 pb-5">
-              <ul>
-                {QUICK_LINKS.map((l) => (
-                  <li key={l.href}>
-                    <MenuLink href={l.href} onSelect={() => close()} strong={l.href === "/"}>
-                      {l.label}
-                    </MenuLink>
-                  </li>
-                ))}
-              </ul>
+              <MenuLink href="/" onSelect={() => close()} strong>
+                Ver todo
+              </MenuLink>
 
               <h2 className="mt-4 mb-1 text-sm font-semibold text-muted">Categorías</h2>
               {error ? (
