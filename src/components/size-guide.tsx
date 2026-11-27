@@ -255,6 +255,21 @@ const FIGURE_ART: Partial<
       largo: { d: "M46 30 V200 M42 30 H50 M42 200 H50", x: 30, y: 115 },
     },
   },
+  // Blusa halter: cuello alto, sisas cortadas hacia el cuello, suelta y con caída
+  topHalter: {
+    viewBox: "18 0 150 200",
+    className: "h-48",
+    body: "M92 8 H118 V24 Q122 46 140 66 L150 186 Q105 196 60 186 L70 66 Q88 46 92 24 Z",
+    band: false,
+    fly: false,
+    // Orilla del cuello y pliegues de la caída
+    details: "M92 24 H118 M100 25 Q98 50 94 80 M110 25 Q112 50 116 80",
+    lines: {
+      pecho: { d: "M69 76 H141 M69 72 V80 M141 72 V80", x: 105, y: 93 },
+      cintura: { d: "M66 120 H144 M66 116 V124 M144 116 V124", x: 105, y: 137 },
+      largo: { d: "M44 8 V188 M40 8 H48 M40 188 H48", x: 30, y: 98 },
+    },
+  },
   // Vestido de tirantes: corpiño ajustado, costura en la cintura y falda en A
   dress: {
     viewBox: "-20 0 230 225",
@@ -284,6 +299,21 @@ const FIGURE_ART: Partial<
       cadera: { d: "M68 131 H142 M68 127 V135 M142 127 V135", x: 105, y: 148 },
       largo: { d: "M20 24 V206 M16 24 H24 M16 206 H24", x: 6, y: 115 },
       manga: { d: "M149.8 28.6 L175.8 138.6 M145.9 29.5 L153.7 27.7 M171.9 139.5 L179.7 137.7", x: 184, y: 84 },
+    },
+  },
+  // Vestido halter: cuello alto, sisas cortadas hacia el cuello, pretina fruncida y falda con vuelo
+  dressHalter: {
+    viewBox: "-20 0 230 215",
+    className: "h-52",
+    body: "M92 8 H118 V22 Q122 44 140 62 Q138 82 132 100 L130 116 L170 194 Q105 210 40 194 L80 116 L78 100 Q72 82 70 62 Q88 44 92 22 Z",
+    band: false,
+    fly: false,
+    // Orilla del cuello, frunces del corpiño y pretina
+    details: "M92 22 H118 M100 23 Q98 44 95 66 M110 23 Q112 44 115 66 M78 100 H132 M80 116 H130",
+    lines: {
+      pecho: { d: "M71 72 H139 M71 68 V76 M139 68 V76", x: 105, y: 87 },
+      cintura: { d: "M79 108 H131 M79 104 V112 M131 104 V112", x: 150, y: 108 },
+      largo: { d: "M20 8 V198 M16 8 H24 M16 198 H24", x: 6, y: 105 },
     },
   },
   // "Tu cuerpo": silueta de frente con cinta en busto, cintura y cadera, y la altura al lado

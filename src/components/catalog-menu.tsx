@@ -19,7 +19,6 @@ const QUICK_LINKS = [
   { href: "/", label: "Ver todo" },
   { href: "/?nuevo=1", label: "Lo nuevo" },
   { href: "/?modo=stock", label: "Entrega inmediata" },
-  { href: "/?modo=pedido", label: "Sobre pedido" },
 ];
 
 /** Botón ☰ del encabezado (celular) que despliega el catálogo bajo el encabezado. */

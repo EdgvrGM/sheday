@@ -37,7 +37,17 @@ export const MEASURES: Record<Measure, { label: string; text: string }> = {
 };
 
 /** Tipos de prenda con dibujo de "Cómo medir". */
-export type Figure = "pants" | "shorts" | "skirt" | "top" | "tubeTop" | "dress" | "dressSleeves" | "body";
+export type Figure =
+  | "pants"
+  | "shorts"
+  | "skirt"
+  | "top"
+  | "tubeTop"
+  | "topHalter"
+  | "dress"
+  | "dressSleeves"
+  | "dressHalter"
+  | "body";
 /**
  * `measures`: las que se pueden marcar en su dibujo; `defaults`: las de una parte nueva;
  * `texts`: cómo se mide algo distinto en esta prenda (el largo de un top no va desde la cintura).
@@ -75,6 +85,16 @@ export const FIGURES: Record<
       largo: "Desde la orilla de arriba hasta el dobladillo, por el costado (no por el centro del escote).",
     },
   },
+  // Blusa halter: cuello alto, sin mangas ni hombros, suelta y con caída
+  topHalter: {
+    label: "Blusa halter",
+    measures: ["pecho", "cintura", "largo"],
+    defaults: ["pecho", "cintura", "largo"],
+    texts: {
+      cintura: "Contorno completo a la altura de la cintura.",
+      largo: "Desde la orilla de arriba del cuello hasta el dobladillo.",
+    },
+  },
   dress: {
     label: "Vestido",
     measures: ["pecho", "cintura", "cadera", "largo"],
@@ -92,6 +112,16 @@ export const FIGURES: Record<
     texts: {
       cintura: "Contorno completo en la parte más angosta del vestido.",
       largo: "Desde donde el hombro se une al cuello hasta el dobladillo.",
+    },
+  },
+  // Vestido halter: cuello alto, sin mangas ni hombros, pretina fruncida y falda con vuelo
+  dressHalter: {
+    label: "Vestido halter",
+    measures: ["pecho", "cintura", "largo"],
+    defaults: ["pecho", "cintura", "largo"],
+    texts: {
+      cintura: "Contorno completo a la altura de la pretina.",
+      largo: "Desde la orilla de arriba del cuello hasta el dobladillo.",
     },
   },
   // Medidas de la clienta (la "tabla del cuerpo"), no de la prenda
@@ -376,6 +406,69 @@ export const TEMPLATES: { name: string; category: CategoryKey; guide: SizeGuide 
         },
       ],
     },
+  },
+  {
+    // Top corto de tela elástica: el pecho es un rango (la guía del proveedor no trae CH)
+    name: "Top strapless elástico XXCH–G",
+    category: "tops",
+    guide: single(
+      "tubeTop",
+      ["pecho", "largo"],
+      [
+        { size: "XXCH", values: [[60, 88], 17] },
+        { size: "XCH", values: [[64, 92], 17.5] },
+        { size: "M", values: [[72, 100], 18.5] },
+        { size: "G", values: [[78, 106], 19] },
+      ],
+    ),
+  },
+  {
+    name: "Vestido halter XCH–XG (prenda y cuerpo)",
+    category: "dresses",
+    guide: {
+      parts: [
+        {
+          label: "Prenda",
+          figure: "dressHalter",
+          measures: ["pecho", "cintura", "largo"],
+          rows: [
+            { size: "XCH", values: [84, 68, 77] },
+            { size: "CH", values: [88, 72, 78] },
+            { size: "M", values: [92, 76, 79] },
+            { size: "G", values: [98, 82, 80.5] },
+            { size: "XG", values: [104, 88, 82] },
+          ],
+        },
+        {
+          label: "Tu cuerpo",
+          figure: "body",
+          measures: ["altura", "pecho", "cintura", "cadera"],
+          rows: [
+            { size: "XCH", values: [[160, 165], [82, 86], [62, 66], [87, 91]] },
+            { size: "CH", values: [[165, 170], [86, 90], [66, 70], [91, 95]] },
+            { size: "M", values: [[165, 170], [90, 94], [70, 74], [95, 99]] },
+            { size: "G", values: [[170, 175], [94, 100], [74, 80], [99, 105]] },
+            { size: "XG", values: [[170, 175], [100, 106], [80, 86], [105, 111]] },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    name: "Blusa halter XXCH–XG",
+    category: "tops",
+    guide: single(
+      "topHalter",
+      ["pecho", "cintura", "largo"],
+      [
+        { size: "XXCH", values: [92, [80, 84], 66.5] },
+        { size: "XCH", values: [96, [84, 88], 67.25] },
+        { size: "CH", values: [100, [88, 92], 68] },
+        { size: "M", values: [104, [92, 96], 68.75] },
+        { size: "G", values: [110, [98, 102], 70] },
+        { size: "XG", values: [116, [104, 108], 71.25] },
+      ],
+    ),
   },
 ];
 

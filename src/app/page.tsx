@@ -1,8 +1,8 @@
-import { Search, Shirt } from "lucide-react";
+import { Search, Shirt, X } from "lucide-react";
 import Link from "next/link";
 
 import { ProductCard } from "@/components/product-card";
-import { buttonClass, chipClass, EmptyState, ErrorBox } from "@/components/ui";
+import { buttonClass, chipClass, cn, EmptyState, ErrorBox } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
 import { arrivalLabel } from "@/lib/format";
 import { type CardProduct, catalogOrder, fetchCatalog, fetchCategories, isAvailable, isNew, newSince } from "@/lib/queries";
@@ -11,7 +11,8 @@ import type { Category } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type Mode = "stock" | "pedido";
+// Solo hay filtro de entrega inmediata: el de "Sobre pedido" se quitó (?modo=pedido se ignora)
+type Mode = "stock";
 interface Filters {
   q?: string;
   modo?: Mode;
@@ -32,7 +33,7 @@ function buildHref({ q, modo, cat, nuevo }: Filters) {
 export default async function CatalogPage(props: PageProps<"/">) {
   const sp = await props.searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const modo = sp.modo === "stock" || sp.modo === "pedido" ? (sp.modo as Mode) : undefined;
+  const modo: Mode | undefined = sp.modo === "stock" ? "stock" : undefined;
   const catNum = typeof sp.cat === "string" ? Number(sp.cat) : NaN;
   const cat = Number.isInteger(catNum) && catNum > 0 ? catNum : undefined;
   const nuevo = sp.nuevo === "1";
@@ -48,7 +49,7 @@ export default async function CatalogPage(props: PageProps<"/">) {
     [products, categories] = await Promise.all([
       fetchCatalog(sb, {
         q,
-        mode: modo === "pedido" ? "preorder" : modo === "stock" ? "stock" : undefined,
+        mode: modo,
         categoryId: cat,
         since: nuevo ? newSince() : undefined,
       }),
@@ -107,23 +108,31 @@ export default async function CatalogPage(props: PageProps<"/">) {
       </form>
 
       <nav aria-label="Filtros" className="flex flex-col gap-2">
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-          <Link href={buildHref({ ...filters, modo: undefined, nuevo: false })} className={chipClass(!modo && !nuevo)}>
-            Todo
-          </Link>
-          <Link href={buildHref({ ...filters, nuevo: !nuevo })} className={chipClass(nuevo)}>
-            Lo nuevo
-          </Link>
-          <Link href={buildHref({ ...filters, modo: modo === "stock" ? undefined : "stock" })} className={chipClass(modo === "stock")}>
-            Entrega inmediata
-          </Link>
-          <Link href={buildHref({ ...filters, modo: modo === "pedido" ? undefined : "pedido" })} className={chipClass(modo === "pedido")}>
-            Sobre pedido
-          </Link>
-        </div>
+        {/* "Lo nuevo" y "Entrega inmediata" ya no tienen fila de chips; se llega a ellos desde la banda
+            o el catálogo ☰, y aquí solo aparece el filtro activo, con su botón para quitarlo */}
+        {(nuevo || modo) && (
+          <div className="flex flex-wrap gap-2">
+            {nuevo && (
+              <Link href={buildHref({ ...filters, nuevo: false })} aria-label="Quitar filtro Lo nuevo" className={cn(chipClass(true), "gap-1.5 pr-3")}>
+                Lo nuevo
+                <X className="size-4" aria-hidden />
+              </Link>
+            )}
+            {modo === "stock" && (
+              <Link
+                href={buildHref({ ...filters, modo: undefined })}
+                aria-label="Quitar filtro Entrega inmediata"
+                className={cn(chipClass(true), "gap-1.5 pr-3")}>
+                Entrega inmediata
+                <X className="size-4" aria-hidden />
+              </Link>
+            )}
+          </div>
+        )}
 
+        {/* Los chips bajan de renglón: todos quedan a la vista, sin desplazarse de lado */}
         {categories.length > 0 && (
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+          <div className="flex flex-wrap gap-2">
             <Link href={buildHref({ ...filters, cat: undefined })} className={chipClass(!cat, false, "subtle")}>
               Todas
             </Link>

@@ -59,15 +59,15 @@ export function priceInput(value: string): string {
   return `${int || "0"}.${dec}`;
 }
 
-/** Un número en centímetros: hasta 3 enteros y 1 decimal ("105.5"). */
+/** Un número en centímetros: hasta 3 enteros y 2 decimales ("105.5", "67.25"). */
 function cmNumber(value: string): string {
   const s = value.replace(/[^\d.]/g, "");
   const dot = s.indexOf(".");
   if (dot === -1) return s.slice(0, 3);
-  return `${s.slice(0, dot).slice(0, 3) || "0"}.${s.slice(dot + 1).replace(/\./g, "").slice(0, 1)}`;
+  return `${s.slice(0, dot).slice(0, 3) || "0"}.${s.slice(dot + 1).replace(/\./g, "").slice(0, 2)}`;
 }
 
-/** Medida en centímetros: un número ("105.5") o un rango ("62-92", telas que estiran). */
+/** Medida en centímetros: un número ("105.5", "67.25") o un rango ("62-92", telas que estiran). */
 export function cmInput(value: string): string {
   const s = value.replace(/,/g, ".").replace(/–/g, "-");
   const dash = s.indexOf("-");
